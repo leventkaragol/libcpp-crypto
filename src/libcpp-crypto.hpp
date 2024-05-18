@@ -32,7 +32,6 @@ SOFTWARE.
 #define LIBCPP_CRYPTO_HPP
 
 #include <openssl/evp.h>
-#include <openssl/pem.h>
 #include <openssl/err.h>
 #include <openssl/aes.h>
 #include <openssl/rand.h>
@@ -40,9 +39,8 @@ SOFTWARE.
 #include <vector>
 #include <memory>
 #include <array>
-#include <random>
-#include <iostream>
 #include <stdexcept>
+#include <iostream>
 
 namespace lklibs
 {
@@ -64,6 +62,7 @@ namespace lklibs
             for (auto c : input)
             {
                 char_array_3[i++] = c;
+
                 if (i == 3)
                 {
                     char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
@@ -72,7 +71,9 @@ namespace lklibs
                     char_array_4[3] = char_array_3[2] & 0x3f;
 
                     for (i = 0; i < 4; i++)
+                    {
                         ret += base64_chars[char_array_4[i]];
+                    }
 
                     i = 0;
                 }
@@ -81,17 +82,23 @@ namespace lklibs
             if (i)
             {
                 for (int j = i; j < 3; j++)
+                {
                     char_array_3[j] = '\0';
+                }
 
                 char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
                 char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
                 char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
 
                 for (int j = 0; j < i + 1; j++)
+                {
                     ret += base64_chars[char_array_4[j]];
+                }
 
                 while (i++ < 3)
+                {
                     ret += '=';
+                }
             }
 
             return ret;
@@ -105,27 +112,32 @@ namespace lklibs
                 "0123456789+/";
 
             std::string ret;
-            int in_len = input.size();
             int i = 0;
             unsigned char char_array_4[4], char_array_3[3];
 
             for (auto c : input)
             {
                 if (c == '=' || !isBase64(c))
+                {
                     break;
+                }
 
                 char_array_4[i++] = c;
                 if (i == 4)
                 {
                     for (i = 0; i < 4; i++)
+                    {
                         char_array_4[i] = base64_chars.find(char_array_4[i]);
+                    }
 
                     char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
                     char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
                     char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
                     for (i = 0; i < 3; i++)
+                    {
                         ret += char_array_3[i];
+                    }
 
                     i = 0;
                 }
@@ -134,17 +146,23 @@ namespace lklibs
             if (i)
             {
                 for (int j = i; j < 4; j++)
+                {
                     char_array_4[j] = 0;
+                }
 
-                for (int j = 0; j < 4; j++)
-                    char_array_4[j] = base64_chars.find(char_array_4[j]);
+                for (unsigned char& j : char_array_4)
+                {
+                    j = base64_chars.find(j);
+                }
 
                 char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
                 char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
                 char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
                 for (int j = 0; j < i - 1; j++)
+                {
                     ret += char_array_3[j];
+                }
             }
 
             return ret;
@@ -162,17 +180,14 @@ namespace lklibs
     public:
         static std::string encryptWithAES(const std::string& plaintext, const std::string& key)
         {
-            if (key.size() != 32) // AES-256 requires a 256-bit key
-            {
-                throw std::invalid_argument("Key length must be 256 bits (32 characters).");
-            }
+            std::string adjustedKey = adjustKeyLength(key);
 
             std::vector<unsigned char> iv(AES_BLOCK_SIZE);
             generateRandomIV(iv);
 
             std::vector<unsigned char> ciphertext(plaintext.size() + AES_BLOCK_SIZE);
 
-            int ciphertext_len = encrypt(reinterpret_cast<const unsigned char*>(plaintext.c_str()), plaintext.length(), reinterpret_cast<const unsigned char*>(key.c_str()), iv.data(), ciphertext.data());
+            int ciphertext_len = encrypt(reinterpret_cast<const unsigned char*>(plaintext.c_str()), plaintext.length(), reinterpret_cast<const unsigned char*>(adjustedKey.c_str()), iv.data(), ciphertext.data());
 
             ciphertext.resize(ciphertext_len);
 
@@ -182,10 +197,7 @@ namespace lklibs
 
         static std::string decryptWithAES(const std::string& ciphertext, const std::string& key)
         {
-            if (key.size() != 32) // AES-256 requires a 256-bit key
-            {
-                throw std::invalid_argument("Key length must be 256 bits (32 characters).");
-            }
+            std::string adjustedKey = adjustKeyLength(key);
 
             auto encryptedText = Base64Converter::decode(ciphertext);
 
@@ -194,7 +206,7 @@ namespace lklibs
 
             std::vector<unsigned char> plaintext(encryptedText.size() - AES_BLOCK_SIZE);
 
-            int plaintext_len = decrypt(reinterpret_cast<const unsigned char*>(encryptedText.data() + AES_BLOCK_SIZE), encryptedText.size() - AES_BLOCK_SIZE, reinterpret_cast<const unsigned char*>(key.c_str()), iv.data(), plaintext.data());
+            int plaintext_len = decrypt(reinterpret_cast<const unsigned char*>(encryptedText.data() + AES_BLOCK_SIZE), encryptedText.size() - AES_BLOCK_SIZE, reinterpret_cast<const unsigned char*>(adjustedKey.c_str()), iv.data(), plaintext.data());
 
             if (plaintext_len == -1)
             {
@@ -215,11 +227,14 @@ namespace lklibs
         static void handleErrors()
         {
             unsigned long errCode;
-            while (errCode = ERR_get_error())
+
+            while ((errCode = ERR_get_error()))
             {
-                char* err = ERR_error_string(errCode, NULL);
-                std::cerr << err << std::endl;
+                char errBuff[256];
+                ERR_error_string_n(errCode, errBuff, sizeof(errBuff));
+                std::cerr << errBuff << std::endl;
             }
+
             throw std::runtime_error("An OpenSSL error occurred");
         }
 
@@ -297,6 +312,24 @@ namespace lklibs
             if (!RAND_bytes(iv.data(), AES_BLOCK_SIZE))
             {
                 handleErrors();
+            }
+        }
+
+        static std::string adjustKeyLength(const std::string& key)
+        {
+            if (key.size() == 32)
+            {
+                return key;
+            }
+            else if (key.size() > 32)
+            {
+                return key.substr(0, 32);
+            }
+            else
+            {
+                std::string adjusted_key = key;
+                adjusted_key.append(32 - key.size(), '0');
+                return adjusted_key;
             }
         }
     };

@@ -2,21 +2,31 @@
 
 using namespace lklibs;
 
-void encrypt()
+void encryptWithAES()
 {
-    std::string input = "Hello, World!";
-    std::string key = "asdqwerty123asd1234safd324dfdsdf";
+    auto plainText = "This text will be encrypted soon";
+    auto key = "mySecretKey";
 
-    auto encrypted = CryptoService::encryptWithAES(input, key);
-    auto decrypted = CryptoService::decryptWithAES(encrypted, key);
+    auto encryptedText = CryptoService::encryptWithAES(plainText, key);
 
-    std::cout << "Encrypted: " << encrypted << std::endl;
-    std::cout << "Decrypted: " << decrypted << std::endl;
+    std::cout << "Encrypted Text: " << encryptedText << std::endl;
+}
+
+void decryptWithAES()
+{
+    auto encryptedText = "D9ktQq1ZnV32JXr5YUpSJcTegqrfCHFi7aDNPGgrtsRmYLqS5YLGBKemqUwPzEeYLVN6ww4hL6ZptcZBLktbhg==";
+    auto key = "mySecretKey";
+
+    auto plainText = CryptoService::decryptWithAES(encryptedText, key);
+
+    std::cout << "Decrypted Text: " << plainText << std::endl;
 }
 
 int main()
 {
-    encrypt();
+    encryptWithAES();
+
+    decryptWithAES();
 
     return 0;
 }
