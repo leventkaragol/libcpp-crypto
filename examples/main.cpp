@@ -22,11 +22,45 @@ void decryptWithAES()
     std::cout << "Decrypted Text: " << plainText << std::endl;
 }
 
+void invalidKeyExceptionWithAES()
+{
+    auto encryptedText = "D9ktQq1ZnV32JXr5YUpSJcTegqrfCHFi7aDNPGgrtsRmYLqS5YLGBKemqUwPzEeYLVN6ww4hL6ZptcZBLktbhg==";
+    auto key = "myInvalidKey";
+
+    try
+    {
+        auto plainText = CryptoService::decryptWithAES(encryptedText, key);
+    }
+    catch (const InvalidKeyException& e)
+    {
+        std::cout << "Decryption Error: " << e.what() << std::endl;
+    }
+}
+
+void CorruptedTextExceptionWithAES()
+{
+    auto encryptedText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    auto key = "mySecretKey";
+
+    try
+    {
+        auto plainText = CryptoService::decryptWithAES(encryptedText, key);
+    }
+    catch (const CorruptedTextException& e)
+    {
+        std::cout << "Decryption Error: " << e.what() << std::endl;
+    }
+}
+
 int main()
 {
     encryptWithAES();
 
     decryptWithAES();
+
+    invalidKeyExceptionWithAES();
+
+    CorruptedTextExceptionWithAES();
 
     return 0;
 }

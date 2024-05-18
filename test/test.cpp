@@ -24,6 +24,17 @@ TEST(DecryptWithAESTest, DecryptionWithAESMustBeCompletedSuccessfullyWithAValidK
     ASSERT_EQ(decryptedText, plainText) << "decryptedText is invalid";
 }
 
+TEST(DecryptWithAESTest, DecryptionWithAESMustBeCompletedSuccessfullyForSpecialCharsWithAValidKey)
+{
+    std::string plainText = "Test message to be used during tests with special characters: !@#$%^&*()_+{}|:<>?~`-=[]\\;',./öçşığüÖÇŞİĞÜ";
+    std::string key = "mySecretKey";
+
+    auto encryptedText = CryptoService::encryptWithAES(plainText, key);
+    auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
+
+    ASSERT_EQ(decryptedText, plainText) << "decryptedText is invalid";
+}
+
 TEST(DecryptWithAESTest, DecryptionWithAESMustBeFailedWithAnInvalidKey)
 {
     std::string plainText = "Test message to be used during tests";
@@ -31,9 +42,40 @@ TEST(DecryptWithAESTest, DecryptionWithAESMustBeFailedWithAnInvalidKey)
     std::string invalidKey = "invalidKey";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
-    auto decryptedText = CryptoService::decryptWithAES(encryptedText, invalidKey);
 
-    ASSERT_EQ(decryptedText, plainText) << "decryptedText is invalid";
+    try
+    {
+        CryptoService::decryptWithAES(encryptedText, invalidKey);
+        FAIL() << "Expected std::runtime_error";
+    }
+    catch (const InvalidKeyException& e)
+    {
+        EXPECT_EQ(std::string(e.what()), "Encryption key does not match the original encryption key");
+    }
+    catch (...)
+    {
+        FAIL() << "Expected std::runtime_error";
+    }
+}
+
+TEST(DecryptWithAESTest, DecryptionWithAESMustBeFailedWithAnInvalidEncryptedText)
+{
+    auto encryptedText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    std::string key = "mySecretKey";
+
+    try
+    {
+        CryptoService::decryptWithAES(encryptedText, key);
+        FAIL() << "Expected std::runtime_error";
+    }
+    catch (const CorruptedTextException& e)
+    {
+        EXPECT_EQ(std::string(e.what()), "Encrypted text is corrupted");
+    }
+    catch (...)
+    {
+        FAIL() << "Expected std::runtime_error";
+    }
 }
 
 TEST(AESKeyTest, AESEncryptionShouldBePossibleWithAKeyLessThan32Characters)

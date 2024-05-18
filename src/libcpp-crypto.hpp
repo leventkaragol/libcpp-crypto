@@ -175,6 +175,78 @@ namespace lklibs
         }
     };
 
+    class CryptoException : public std::runtime_error
+    {
+    public:
+        explicit CryptoException(const std::string& message) : std::runtime_error(message)
+        {
+        }
+    };
+
+    class EncryptionInitException : public CryptoException
+    {
+    public:
+        explicit EncryptionInitException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    class EncryptionUpdateException : public CryptoException
+    {
+    public:
+        explicit EncryptionUpdateException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    class EncryptionFinalException : public CryptoException
+    {
+    public:
+        explicit EncryptionFinalException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    class DecryptionInitException : public CryptoException
+    {
+    public:
+        explicit DecryptionInitException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    class DecryptionUpdateException : public CryptoException
+    {
+    public:
+        explicit DecryptionUpdateException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    class InvalidKeyException : public CryptoException
+    {
+    public:
+        explicit InvalidKeyException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    class CorruptedTextException : public CryptoException
+    {
+    public:
+        explicit CorruptedTextException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    class IVGenerationException : public CryptoException
+    {
+    public:
+        explicit IVGenerationException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
     class CryptoService
     {
     public:
@@ -208,11 +280,6 @@ namespace lklibs
 
             int plaintext_len = decrypt(reinterpret_cast<const unsigned char*>(encryptedText.data() + AES_BLOCK_SIZE), encryptedText.size() - AES_BLOCK_SIZE, reinterpret_cast<const unsigned char*>(adjustedKey.c_str()), iv.data(), plaintext.data());
 
-            if (plaintext_len == -1)
-            {
-                throw std::runtime_error("Decryption failed");
-            }
-
             plaintext.resize(plaintext_len);
 
             return std::string{plaintext.begin(), plaintext.end()};
@@ -224,20 +291,6 @@ namespace lklibs
             void operator()(EVP_CIPHER_CTX* ptr) const { EVP_CIPHER_CTX_free(ptr); }
         };
 
-        static void handleErrors()
-        {
-            unsigned long errCode;
-
-            while ((errCode = ERR_get_error()))
-            {
-                char errBuff[256];
-                ERR_error_string_n(errCode, errBuff, sizeof(errBuff));
-                std::cerr << errBuff << std::endl;
-            }
-
-            throw std::runtime_error("An OpenSSL error occurred");
-        }
-
         static int encrypt(const unsigned char* plaintext, int plaintext_len, const unsigned char* key, unsigned char* iv, unsigned char* ciphertext)
         {
             std::unique_ptr<EVP_CIPHER_CTX, EVP_CIPHER_CTX_Deleter> ctx(EVP_CIPHER_CTX_new());
@@ -247,24 +300,24 @@ namespace lklibs
 
             if (!ctx)
             {
-                handleErrors();
+                throw EncryptionInitException("Failed to create OpenSSL context for encryption");
             }
 
             if (1 != EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv))
             {
-                handleErrors();
+                throw EncryptionInitException("Failed to initialize OpenSSL encryption operation");
             }
 
             if (1 != EVP_EncryptUpdate(ctx.get(), ciphertext, &len, plaintext, plaintext_len))
             {
-                handleErrors();
+                throw EncryptionUpdateException("Failed to update OpenSSL encryption operation");
             }
 
             ciphertext_len = len;
 
             if (1 != EVP_EncryptFinal_ex(ctx.get(), ciphertext + len, &len))
             {
-                handleErrors();
+                throw EncryptionFinalException("Failed to finalize OpenSSL encryption operation");
             }
 
             ciphertext_len += len;
@@ -281,25 +334,31 @@ namespace lklibs
 
             if (!ctx)
             {
-                handleErrors();
+                throw DecryptionInitException("Failed to create OpenSSL context for decryption");
             }
 
             if (1 != EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv))
             {
-                handleErrors();
+                throw DecryptionInitException("Failed to initialize OpenSSL decryption operation");
             }
 
             if (1 != EVP_DecryptUpdate(ctx.get(), plaintext, &len, ciphertext, ciphertext_len))
             {
-                handleErrors();
+                throw DecryptionUpdateException("Failed to update OpenSSL decryption operation");
             }
 
             plaintext_len = len;
 
             if (1 != EVP_DecryptFinal_ex(ctx.get(), plaintext + len, &len))
             {
-                handleErrors();
-                return -1;
+                if (ERR_GET_REASON(ERR_peek_last_error()) == EVP_R_BAD_DECRYPT)
+                {
+                    throw InvalidKeyException("Encryption key does not match the original encryption key");
+                }
+                else
+                {
+                    throw CorruptedTextException("Encrypted text is corrupted");
+                }
             }
 
             plaintext_len += len;
@@ -311,7 +370,7 @@ namespace lklibs
         {
             if (!RAND_bytes(iv.data(), AES_BLOCK_SIZE))
             {
-                handleErrors();
+                throw IVGenerationException("Failed to generate random IV");
             }
         }
 
