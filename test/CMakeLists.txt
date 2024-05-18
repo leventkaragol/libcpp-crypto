@@ -7,4 +7,4 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(test test.cpp)
 
-target_link_libraries(test PRIVATE libcpp-crypto OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(test PRIVATE libcpp-crypto OpenSSL::SSL OpenSSL::Crypto GTest::gtest GTest::gtest_main)
