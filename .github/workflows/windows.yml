@@ -58,4 +58,4 @@ jobs:
 
       - name: Run tests
         run: |
-          & "D:\a\libcpp-http-client\libcpp-http-client\build\test\Release\test.exe"
+          & "D:\a\libcpp-crypto\libcpp-crypto\build\test\Release\test.exe"

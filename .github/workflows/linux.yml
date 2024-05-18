@@ -28,16 +28,16 @@ jobs:
           ln -s /opt/vcpkg/vcpkg /usr/local/bin/vcpkg
       - name: Clone project repository
         run: |
-          git clone https://github.com/leventkaragol/libcpp-http-client.git /root/libcpp-http-client
+          git clone https://github.com/leventkaragol/libcpp-crypto.git /root/libcpp-crypto
       - name: Run cmake with vcpkg toolchain
         run: |
-          cd /root/libcpp-http-client
+          cd /root/libcpp-crypto
           cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake
       - name: Build the project
         run: |
-          cd /root/libcpp-http-client
+          cd /root/libcpp-crypto
           cmake --build build --config Release
       - name: Run tests
         run: |
-          cd /root/libcpp-http-client
+          cd /root/libcpp-crypto
           ./build/test/test
