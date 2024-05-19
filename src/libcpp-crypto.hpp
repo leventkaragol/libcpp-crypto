@@ -44,9 +44,19 @@ SOFTWARE.
 
 namespace lklibs
 {
+    /**
+     * @brief Base64 conversion class for encryption operations
+     */
     class Base64Converter
     {
     public:
+        /**
+         * @brief Encodes the given input string to base64
+         *
+         * @param input Input string to encode
+         *
+         * @return Encoded base64 string
+         */
         static std::string encode(const std::string& input)
         {
             static const std::string base64_chars =
@@ -104,6 +114,13 @@ namespace lklibs
             return ret;
         }
 
+        /**
+         * @brief Decodes the given base64 string to original string
+         *
+         * @param input Base64 string to decode
+         *
+         * @return Decoded original string
+         */
         static std::string decode(const std::string& input)
         {
             static const std::string base64_chars =
@@ -127,7 +144,7 @@ namespace lklibs
                 {
                     for (i = 0; i < 4; i++)
                     {
-                        char_array_4[i] = base64_chars.find(char_array_4[i]);
+                        char_array_4[i] = static_cast<unsigned char>(base64_chars.find(char_array_4[i]));
                     }
 
                     char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -152,7 +169,16 @@ namespace lklibs
 
                 for (unsigned char& j : char_array_4)
                 {
-                    j = base64_chars.find(j);
+                    size_t index = base64_chars.find(j);
+
+                    if (index != std::string::npos)
+                    {
+                        j = static_cast<unsigned char>(index);
+                    }
+                    else
+                    {
+                        j = 0;
+                    }
                 }
 
                 char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -169,12 +195,22 @@ namespace lklibs
         }
 
     private:
+        /**
+         * @brief Checks if the given character is a base64 character
+         *
+         * @param c Character to check
+         *
+         * @return True if the character is a base64 character, false otherwise
+         */
         static bool isBase64(unsigned char c)
         {
             return (isalnum(c) || (c == '+') || (c == '/'));
         }
     };
 
+    /**
+     * @brief Base Exception class for crypto operations
+     */
     class CryptoException : public std::runtime_error
     {
     public:
@@ -183,6 +219,9 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Exception class for encryption initialization errors
+     */
     class EncryptionInitException : public CryptoException
     {
     public:
@@ -191,6 +230,9 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Exception class for encryption update errors
+     */
     class EncryptionUpdateException : public CryptoException
     {
     public:
@@ -199,6 +241,9 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Exception class for encryption finalization errors
+     */
     class EncryptionFinalException : public CryptoException
     {
     public:
@@ -207,6 +252,9 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Exception class for decryption initialization errors
+     */
     class DecryptionInitException : public CryptoException
     {
     public:
@@ -215,6 +263,9 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Exception class for decryption update errors
+     */
     class DecryptionUpdateException : public CryptoException
     {
     public:
@@ -223,6 +274,9 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Exception class for invalid key errors
+     */
     class InvalidKeyException : public CryptoException
     {
     public:
@@ -231,6 +285,9 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Exception class for corrupted text errors
+     */
     class CorruptedTextException : public CryptoException
     {
     public:
@@ -239,6 +296,9 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Exception class for IV generation errors
+     */
     class IVGenerationException : public CryptoException
     {
     public:
@@ -247,9 +307,20 @@ namespace lklibs
         }
     };
 
+    /**
+     * @brief Crypto service class for encryption and decryption operations
+     */
     class CryptoService
     {
     public:
+        /**
+         * @brief Encrypts the given plaintext with the given key using AES-256 encryption
+         *
+         * @param plaintext Plaintext to encrypt
+         * @param key Key to use for encryption
+         *
+         * @return Encrypted ciphertext
+         */
         static std::string encryptWithAES(const std::string& plaintext, const std::string& key)
         {
             std::string adjustedKey = adjustKeyLength(key);
@@ -259,7 +330,7 @@ namespace lklibs
 
             std::vector<unsigned char> ciphertext(plaintext.size() + AES_BLOCK_SIZE);
 
-            int ciphertext_len = encrypt(reinterpret_cast<const unsigned char*>(plaintext.c_str()), plaintext.length(), reinterpret_cast<const unsigned char*>(adjustedKey.c_str()), iv.data(), ciphertext.data());
+            int ciphertext_len = encrypt(reinterpret_cast<const unsigned char*>(plaintext.c_str()), static_cast<int>(plaintext.length()), reinterpret_cast<const unsigned char*>(adjustedKey.c_str()), iv.data(), ciphertext.data());
 
             ciphertext.resize(ciphertext_len);
 
@@ -267,6 +338,14 @@ namespace lklibs
             return Base64Converter::encode(encrypted);
         }
 
+        /**
+         * @brief Decrypts the given ciphertext with the given key using AES-256 decryption
+         *
+         * @param ciphertext Ciphertext to decrypt
+         * @param key Key to use for decryption
+         *
+         * @return Decrypted plaintext
+         */
         static std::string decryptWithAES(const std::string& ciphertext, const std::string& key)
         {
             std::string adjustedKey = adjustKeyLength(key);
@@ -278,7 +357,7 @@ namespace lklibs
 
             std::vector<unsigned char> plaintext(encryptedText.size() - AES_BLOCK_SIZE);
 
-            int plaintext_len = decrypt(reinterpret_cast<const unsigned char*>(encryptedText.data() + AES_BLOCK_SIZE), encryptedText.size() - AES_BLOCK_SIZE, reinterpret_cast<const unsigned char*>(adjustedKey.c_str()), iv.data(), plaintext.data());
+            int plaintext_len = decrypt(reinterpret_cast<const unsigned char*>(encryptedText.data() + AES_BLOCK_SIZE), static_cast<int>(encryptedText.size() - AES_BLOCK_SIZE), reinterpret_cast<const unsigned char*>(adjustedKey.c_str()), iv.data(), plaintext.data());
 
             plaintext.resize(plaintext_len);
 
