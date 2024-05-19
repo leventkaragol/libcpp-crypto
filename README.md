@@ -42,9 +42,9 @@ You don't need to create an instance of the class to use them.
 > All methods and parameters descriptions are also available within the code as comment for IDEs.
 
 ```cpp
-- static std::string encryptWithAES(const std::string& plaintext, const std::string& key)
+static std::string encryptWithAES(const std::string& plaintext, const std::string& key);
 
-- static std::string decryptWithAES(const std::string& ciphertext, const std::string& key)
+static std::string decryptWithAES(const std::string& ciphertext, const std::string& key);
 ```
 
 ## License
