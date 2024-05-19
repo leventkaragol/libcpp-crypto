@@ -75,6 +75,66 @@ int main() {
 > amount of "0" to the end of keys shorter than 32 characters, and ignores the last parts of keys longer than
 > 32 characters, allowing you to use the key you want without any errors.
 
+
+## How to handle Exceptions?
+
+There are two main Exceptions you may encounter when using the library. The first one is the "InvalidKeyException"
+you will receive if the encryption key of the text you want to decrypt is incorrect, and the second one is the
+"CorruptedTextException" you will receive if the text you want to decrypt is invalid.
+
+The code below shows you how to catch the Exception thrown in case of an invalid encryption key.
+
+```cpp
+#include "libcpp-crypto.hpp"
+
+using namespace lklibs;
+
+int main() {
+
+    auto plainText = "This text will be encrypted soon";
+    auto key = "mySecretKey";
+    auto invalidKey = "invalidKey";
+    
+    auto encryptedText = CryptoService::encryptWithAES(plainText, key);
+    
+    try
+    {
+        auto decryptedText = CryptoService::decryptWithAES(encryptedText, invalidKey);
+    }
+    catch (const InvalidKeyException& e)
+    {
+        std::cerr << e.what() << std::endl; // Encryption key does not match the original encryption key 
+    }
+    
+    return 0;
+}
+```
+
+The code below also shows you how to catch the Exception thrown when you try to decrypt and invalid text.
+
+```cpp
+#include "libcpp-crypto.hpp"
+
+using namespace lklibs;
+
+int main() {
+
+    auto encryptedText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    auto key = "mySecretKey";
+    
+    try
+    {
+        auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
+    }
+    catch (const CorruptedTextException& e)
+    {
+        std::cerr << e.what() << std::endl; // Encrypted text is corrupted 
+    }
+    
+    return 0;
+}
+```
+
 ## Semantic Versioning
 
 Versioning of the library is done using conventional semantic versioning. Accordingly,
