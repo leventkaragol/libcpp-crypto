@@ -13,10 +13,67 @@ Modern, easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and als
 
 # Table of Contents
 
+* [How to add it to my project](#how-to-add-it-to-my-project)
+* [How to use? (Symmetric Encryption with AES)](#how-to-use-symmetric-encryption-with-aes)
 * [Semantic Versioning](#semantic-versioning)
 * [Full function list](#full-function-list)
 * [License](#license)
 * [Contact](#contact)
+
+## How to add it to my project?
+
+This is a header only library. So actually, all you need is to add the libcpp-crypto.hpp file
+in src folder to your project and start using it with #include.
+
+But this library is a kind of OpenSSL wrapper that uses OpenSSL under the hood. So, you also need to add OpenSSL to
+your project before to use it.
+
+You can find usage examples in the examples folder, also find a sample CMakeLists.txt file content below.
+
+```cmake
+cmake_minimum_required(VERSION 3.14)
+
+project(myProject)
+
+find_package(OpenSSL REQUIRED)
+
+add_executable(myProject main.cpp)
+
+target_link_libraries(myProject PRIVATE libcpp-crypto OpenSSL::SSL OpenSSL::Crypto)
+
+```
+
+## How to use? (Symmetric Encryption with AES)
+
+To encrypt and decrypt the given text with AES-256, all you need to do is call the static "encryptWithAES" and
+"decryptWithAES" methods with a key you choose for encryption.
+
+```cpp
+#include "libcpp-crypto.hpp"
+
+using namespace lklibs;
+
+int main() {
+
+    auto plainText = "This text will be encrypted soon";
+    auto key = "mySecretKey";
+    
+    auto encryptedText = CryptoService::encryptWithAES(plainText, key);
+    
+    std::cout << "Encrypted Text: " << encryptedText << std::endl;
+    
+    auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
+    
+    std::cout << "Decrypted Text: " << decryptedText << std::endl;
+
+    return 0;
+}
+```
+
+> [!TIP]
+> In fact, the key you need to use with AES-256 must be 32 characters long. However, the library adds a sufficient
+> amount of "0" to the end of keys shorter than 32 characters, and ignores the last parts of keys longer than
+> 32 characters, allowing you to use the key you want without any errors.
 
 ## Semantic Versioning
 
