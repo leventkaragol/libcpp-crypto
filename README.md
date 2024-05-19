@@ -83,8 +83,10 @@ int main() {
 ## How to use? (Asymmetric Encryption with RSA)
 
 To encrypt and decrypt the given text with RSA, all you need to do is call the static **"encryptWithRSA"** and
-**"decryptWithRSA"** methods with a pair of public/private key (If you don't know how to generate public/private keys,
-please see the next topic).
+**"decryptWithRSA"** methods with a pair of public/private key.
+
+> [!TIP]
+> If you don't know how to generate public/private keys, please see the next topic
 
 ```cpp
 #include "libcpp-crypto.hpp"
@@ -150,8 +152,10 @@ int main() {
 
 it is very easy to generate the Public and Private key pair, if OpenSSL is installed on your system. As a first step,
 when you run it by typing the following line on the command line, a text file named "private_key.pem" will be created
-containing the private key information. "2048" at the end of the command indicates bits value of the generated key
-(If you don't know what to write here, please see the next topic).
+containing the private key information. "2048" at the end of the command indicates bits value of the generated key.
+
+> [!TIP]
+> If you don't know what value to write here, please see the next topic
 
 ```bash
 openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
