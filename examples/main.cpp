@@ -216,6 +216,8 @@ void CorruptedTextExceptionWithRSA()
 
 int main()
 {
+    // Symmetric Encryption with AES
+
     encryptWithAES();
 
     decryptWithAES();
@@ -223,6 +225,9 @@ int main()
     invalidKeyExceptionWithAES();
 
     CorruptedTextExceptionWithAES();
+
+
+    // Asymmetric Encryption with RSA
 
     encryptWithRSA();
 
