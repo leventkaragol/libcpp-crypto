@@ -18,7 +18,8 @@ Modern, easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and als
 * [How to use? (Asymmetric Encryption with RSA)](#how-to-use-asymmetric-encryption-with-rsa)
 * [How do I generate Public/Private Keys?](#how-do-i-generate-publicprivate-keys)
 * [Relationship between key size and max text length that can be encrypted](#relationship-between-key-size-and-max-text-length-that-can-be-encrypted)
-* [How to handle Exceptions?](#how-to-handle-exceptions)
+* [How to handle Exceptions (AES)?](#how-to-handle-exceptions-aes)
+* [How to handle Exceptions (RSA)?](#how-to-handle-exceptions-rsa)
 * [Semantic Versioning](#semantic-versioning)
 * [Full function list](#full-function-list)
 * [License](#license)
@@ -242,6 +243,52 @@ int main() {
     return 0;
 }
 ```
+
+## How to handle Exceptions (RSA)?
+
+The exception part for the RSA side is a little different. If the public and private keys used are not correct,
+**"InvalidPublicKeyException"** and **"InvalidPrivateKeyException"** are thrown. However, the structure of the keys
+used must be corrupt to throw these exceptions. If you use incompatible but structurally valid keys, no exception 
+will be thrown. However, the text obtained after decryption will consist of just meaningless characters.
+
+```cpp
+#include "libcpp-crypto.hpp"
+
+using namespace lklibs;
+
+int main() {
+
+    auto plainText = "This text will be encrypted soon";
+
+    auto publicKey = "-----BEGIN PUBLIC KEY-----\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwIASR0gIwizgv0j/Gzj6\n"
+        "E/gS1J6gwUXeDBND7c4rDdqh/NP78N6pWNKxa5YAytTAOsoqxLDRL29pq55HyRw5\n"
+        "47M35hwdmEfE8bOjnogvHRRKu7A2iGV7akkK0cP6XgHgcJVlXBX2xCT70nIX4dDk\n"
+        "vGhSKwrps1o+3XVhtnVoPsCDQEESApGalhQ55OT8s0fM7OTFMfqsV3GD9J9FO4wP\n"
+        "BlawHpQ5rbWGsyNYXnjXzGpmuyKl4xQBVdbx1tzh+1XlwqMhbXibMozo5U5De0oH\n"
+        "A9z1Owbt3++3t+LykQDcHEtiKcvYt71by1X3J2IQOBAwWJ2jRjZQ5QJWaGXirPdR\n"
+        "VwIDAQAB\n"
+        "-----END PUBLIC KEY-----";
+
+    auto privateKey = "-----BEGIN PRIVATE KEY-----\n"
+        "SOME_INVALID_KEY/\n"
+        "-----END PRIVATE KEY-----";
+
+    auto encryptedText = CryptoService::encryptWithRSA(plainText, publicKey);
+
+    try
+    {
+        auto decryptedText = CryptoService::decryptWithRSA(encryptedText, privateKey);
+    }
+    catch (const InvalidPrivateKeyException& e)
+    {
+        std::cerr << e.what() << std::endl; // RSA private key is invalid
+    }
+    
+    return 0;
+}
+```
+
 
 ## Semantic Versioning
 
