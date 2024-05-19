@@ -15,6 +15,7 @@ Modern, easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and als
 
 * [How to add it to my project](#how-to-add-it-to-my-project)
 * [How to use? (Symmetric Encryption with AES)](#how-to-use-symmetric-encryption-with-aes)
+* [How to handle Exceptions?](#how-to-handle-exceptions)
 * [Semantic Versioning](#semantic-versioning)
 * [Full function list](#full-function-list)
 * [License](#license)
