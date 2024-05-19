@@ -46,8 +46,8 @@ target_link_libraries(myProject PRIVATE libcpp-crypto OpenSSL::SSL OpenSSL::Cryp
 
 ## How to use? (Symmetric Encryption with AES)
 
-To encrypt and decrypt the given text with AES-256, all you need to do is call the static "encryptWithAES" and
-"decryptWithAES" methods with a key you choose for encryption.
+To encrypt and decrypt the given text with AES-256, all you need to do is call the static **"encryptWithAES"** and
+**"decryptWithAES"** methods with a key you choose for encryption.
 
 ```cpp
 #include "libcpp-crypto.hpp"
@@ -79,9 +79,9 @@ int main() {
 
 ## How to handle Exceptions?
 
-There are two main Exceptions you may encounter when using the library. The first one is the "InvalidKeyException"
+There are two main Exceptions you may encounter when using the library. The first one is the **"InvalidKeyException"**
 you will receive if the encryption key of the text you want to decrypt is incorrect, and the second one is the
-"CorruptedTextException" you will receive if the text you want to decrypt is invalid.
+**"CorruptedTextException"** you will receive if the text you want to decrypt is invalid.
 
 The code below shows you how to catch the Exception thrown in case of an invalid encryption key.
 
