@@ -1,7 +1,7 @@
 /*
 
 Modern, easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and also hash (SHA-256) library for C++ (17+)
-version 1.0.0
+version 1.1.0
 https://github.com/leventkaragol/libcpp-crypto
 
 If you encounter any issues, please submit a ticket at https://github.com/leventkaragol/libcpp-crypto/issues
@@ -34,6 +34,7 @@ SOFTWARE.
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/aes.h>
+#include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <string>
 #include <vector>
@@ -220,67 +221,34 @@ namespace lklibs
     };
 
     /**
-     * @brief Exception class for encryption initialization errors
-     */
-    class EncryptionInitException : public CryptoException
-    {
-    public:
-        explicit EncryptionInitException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
-
-    /**
-     * @brief Exception class for encryption update errors
-     */
-    class EncryptionUpdateException : public CryptoException
-    {
-    public:
-        explicit EncryptionUpdateException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
-
-    /**
-     * @brief Exception class for encryption finalization errors
-     */
-    class EncryptionFinalException : public CryptoException
-    {
-    public:
-        explicit EncryptionFinalException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
-
-    /**
-     * @brief Exception class for decryption initialization errors
-     */
-    class DecryptionInitException : public CryptoException
-    {
-    public:
-        explicit DecryptionInitException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
-
-    /**
-     * @brief Exception class for decryption update errors
-     */
-    class DecryptionUpdateException : public CryptoException
-    {
-    public:
-        explicit DecryptionUpdateException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
-
-    /**
      * @brief Exception class for invalid key errors
      */
     class InvalidKeyException : public CryptoException
     {
     public:
         explicit InvalidKeyException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    /**
+     * @brief Exception class for invalid public key errors
+     */
+    class InvalidPublicKeyException : public CryptoException
+    {
+    public:
+        explicit InvalidPublicKeyException(const std::string& message) : CryptoException(message)
+        {
+        }
+    };
+
+    /**
+     * @brief Exception class for invalid private key errors
+     */
+    class InvalidPrivateKeyException : public CryptoException
+    {
+    public:
+        explicit InvalidPrivateKeyException(const std::string& message) : CryptoException(message)
         {
         }
     };
@@ -297,12 +265,12 @@ namespace lklibs
     };
 
     /**
-     * @brief Exception class for IV generation errors
+     * @brief Exception class for text too long for public key errors
      */
-    class IVGenerationException : public CryptoException
+    class TextTooLongForPublicKeyException : public CryptoException
     {
     public:
-        explicit IVGenerationException(const std::string& message) : CryptoException(message)
+        explicit TextTooLongForPublicKeyException(const std::string& message) : CryptoException(message)
         {
         }
     };
@@ -364,6 +332,116 @@ namespace lklibs
             return std::string{plaintext.begin(), plaintext.end()};
         }
 
+        /**
+         * @brief Encrypts the given plaintext with the given public key using RSA encryption
+         *
+         * @param plaintext Plaintext to encrypt
+         * @param publicKeyStr Public key to use for encryption
+         *
+         * @return Encrypted ciphertext
+         */
+        static std::string encryptWithRSA(const std::string& plaintext, const std::string& publicKeyStr)
+        {
+            auto bioDeleter = [](BIO* bio) { BIO_free(bio); };
+
+            std::unique_ptr<BIO, decltype(bioDeleter)> bio(BIO_new_mem_buf(publicKeyStr.data(), -1), bioDeleter);
+
+            auto pkeyDeleter = [](EVP_PKEY* pkey) { EVP_PKEY_free(pkey); };
+
+            std::unique_ptr<EVP_PKEY, decltype(pkeyDeleter)> publicKey(PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr), pkeyDeleter);
+
+            if (!publicKey)
+            {
+                throw InvalidPublicKeyException("RSA public key is invalid");
+            }
+
+            auto ctxDeleter = [](EVP_PKEY_CTX* ctx) { EVP_PKEY_CTX_free(ctx); };
+
+            std::unique_ptr<EVP_PKEY_CTX, decltype(ctxDeleter)> ctx(EVP_PKEY_CTX_new(publicKey.get(), nullptr), ctxDeleter);
+
+            if (!ctx)
+            {
+                throw CryptoException("Failed to create context for encryption");
+            }
+
+            if (EVP_PKEY_encrypt_init(ctx.get()) <= 0)
+            {
+                throw CryptoException("Failed to initialize encryption operation");
+            }
+
+            size_t outlen;
+
+            if (EVP_PKEY_encrypt(ctx.get(), nullptr, &outlen, reinterpret_cast<const unsigned char*>(plaintext.data()), plaintext.size()) <= 0)
+            {
+                throw CryptoException("Failed to get output length for encryption");
+            }
+
+            std::vector<unsigned char> ciphertext(outlen);
+
+            if (EVP_PKEY_encrypt(ctx.get(), ciphertext.data(), &outlen, reinterpret_cast<const unsigned char*>(plaintext.data()), plaintext.size()) <= 0)
+            {
+                throw TextTooLongForPublicKeyException("The text to be encrypted is too long for the public key used");
+            }
+
+            return Base64Converter::encode(std::string(ciphertext.begin(), ciphertext.end()));
+        }
+
+        /**
+         * @brief Decrypts the given ciphertext with the given private key using RSA decryption
+         *
+         * @param ciphertext Ciphertext to decrypt
+         * @param privateKeyStr Private key to use for decryption
+         *
+         * @return Decrypted plaintext
+         */
+        static std::string decryptWithRSA(const std::string& ciphertext, const std::string& privateKeyStr)
+        {
+            auto encryptedText = Base64Converter::decode(ciphertext);
+
+            auto bioDeleter = [](BIO* bio) { BIO_free(bio); };
+
+            std::unique_ptr<BIO, decltype(bioDeleter)> bio(BIO_new_mem_buf(privateKeyStr.data(), -1), bioDeleter);
+
+            auto pkeyDeleter = [](EVP_PKEY* pkey) { EVP_PKEY_free(pkey); };
+
+            std::unique_ptr<EVP_PKEY, decltype(pkeyDeleter)> privateKey(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr), pkeyDeleter);
+
+            if (!privateKey)
+            {
+                throw InvalidPrivateKeyException("RSA private key is invalid");
+            }
+
+            auto ctxDeleter = [](EVP_PKEY_CTX* ctx) { EVP_PKEY_CTX_free(ctx); };
+
+            std::unique_ptr<EVP_PKEY_CTX, decltype(ctxDeleter)> ctx(EVP_PKEY_CTX_new(privateKey.get(), nullptr), ctxDeleter);
+
+            if (!ctx)
+            {
+                throw CryptoException("Failed to create context for decryption");
+            }
+
+            if (EVP_PKEY_decrypt_init(ctx.get()) <= 0)
+            {
+                throw CryptoException("Failed to initialize decryption operation");
+            }
+
+            size_t outlen;
+
+            if (EVP_PKEY_decrypt(ctx.get(), nullptr, &outlen, reinterpret_cast<const unsigned char*>(encryptedText.data()), encryptedText.size()) <= 0)
+            {
+                throw CryptoException("Failed to get output length for decryption");
+            }
+
+            std::vector<unsigned char> plaintext(outlen);
+
+            if (EVP_PKEY_decrypt(ctx.get(), plaintext.data(), &outlen, reinterpret_cast<const unsigned char*>(encryptedText.data()), encryptedText.size()) <= 0)
+            {
+                throw CorruptedTextException("Encrypted text is corrupted");
+            }
+
+            return std::string(plaintext.begin(), plaintext.begin() + outlen);
+        }
+
     private:
         struct EVP_CIPHER_CTX_Deleter
         {
@@ -379,24 +457,24 @@ namespace lklibs
 
             if (!ctx)
             {
-                throw EncryptionInitException("Failed to create OpenSSL context for encryption");
+                throw CryptoException("Failed to create OpenSSL context for encryption");
             }
 
             if (1 != EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv))
             {
-                throw EncryptionInitException("Failed to initialize OpenSSL encryption operation");
+                throw CryptoException("Failed to initialize OpenSSL encryption operation");
             }
 
             if (1 != EVP_EncryptUpdate(ctx.get(), ciphertext, &len, plaintext, plaintext_len))
             {
-                throw EncryptionUpdateException("Failed to update OpenSSL encryption operation");
+                throw CryptoException("Failed to update OpenSSL encryption operation");
             }
 
             ciphertext_len = len;
 
             if (1 != EVP_EncryptFinal_ex(ctx.get(), ciphertext + len, &len))
             {
-                throw EncryptionFinalException("Failed to finalize OpenSSL encryption operation");
+                throw CryptoException("Failed to finalize OpenSSL encryption operation");
             }
 
             ciphertext_len += len;
@@ -413,17 +491,17 @@ namespace lklibs
 
             if (!ctx)
             {
-                throw DecryptionInitException("Failed to create OpenSSL context for decryption");
+                throw CryptoException("Failed to create OpenSSL context for decryption");
             }
 
             if (1 != EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv))
             {
-                throw DecryptionInitException("Failed to initialize OpenSSL decryption operation");
+                throw CryptoException("Failed to initialize OpenSSL decryption operation");
             }
 
             if (1 != EVP_DecryptUpdate(ctx.get(), plaintext, &len, ciphertext, ciphertext_len))
             {
-                throw DecryptionUpdateException("Failed to update OpenSSL decryption operation");
+                throw CryptoException("Failed to update OpenSSL decryption operation");
             }
 
             plaintext_len = len;
@@ -449,7 +527,7 @@ namespace lklibs
         {
             if (!RAND_bytes(iv.data(), AES_BLOCK_SIZE))
             {
-                throw IVGenerationException("Failed to generate random IV");
+                throw CryptoException("Failed to generate random IV");
             }
         }
 
@@ -472,4 +550,5 @@ namespace lklibs
         }
     };
 }
+
 #endif //LIBCPP_CRYPTO_HPP
