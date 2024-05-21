@@ -1,7 +1,7 @@
 /*
 
 Modern, easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and also hash (SHA-256) library for C++ (17+)
-version 1.1.0
+version 1.2.0
 https://github.com/leventkaragol/libcpp-crypto
 
 If you encounter any issues, please submit a ticket at https://github.com/leventkaragol/libcpp-crypto/issues
@@ -37,6 +37,8 @@ SOFTWARE.
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <string>
+#include <iomanip>
+#include <sstream>
 #include <vector>
 #include <memory>
 #include <array>
@@ -442,10 +444,56 @@ namespace lklibs
             return std::string(plaintext.begin(), plaintext.begin() + outlen);
         }
 
+        /**
+         * @brief Hashes the given string with SHA-256
+         *
+         * @param text String to hash
+         *
+         * @return Hashed string
+         */
+        static std::string hash(const std::string& text)
+        {
+            unsigned char hash[EVP_MAX_MD_SIZE];
+            unsigned int lengthOfHash = 0;
+
+            std::unique_ptr<EVP_MD_CTX, EVP_MD_CTX_Deleter> context(EVP_MD_CTX_new());
+
+            if (context)
+            {
+                if (EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr))
+                {
+                    if (EVP_DigestUpdate(context.get(), text.c_str(), text.size()))
+                    {
+                        if (EVP_DigestFinal_ex(context.get(), hash, &lengthOfHash))
+                        {
+                            std::stringstream ss;
+
+                            for (unsigned int i = 0; i < lengthOfHash; ++i)
+                            {
+                                ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
+                            }
+
+                            return ss.str();
+                        }
+                    }
+                }
+            }
+
+            return "";
+        }
+
     private:
         struct EVP_CIPHER_CTX_Deleter
         {
             void operator()(EVP_CIPHER_CTX* ptr) const { EVP_CIPHER_CTX_free(ptr); }
+        };
+
+        struct EVP_MD_CTX_Deleter
+        {
+            void operator()(EVP_MD_CTX* ctx) const
+            {
+                EVP_MD_CTX_free(ctx);
+            }
         };
 
         static int encrypt(const unsigned char* plaintext, int plaintext_len, const unsigned char* key, unsigned char* iv, unsigned char* ciphertext)

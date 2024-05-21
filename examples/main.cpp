@@ -214,6 +214,15 @@ void CorruptedTextExceptionWithRSA()
     }
 }
 
+void hash()
+{
+    auto plainText = "This text will be hashed soon";
+
+    auto hashText = CryptoService::hash(plainText);
+
+    std::cout << "Hash: " << hashText << std::endl;
+}
+
 int main()
 {
     // Symmetric Encryption with AES
@@ -240,6 +249,11 @@ int main()
     tooLongTextExceptionForEncryptionWithRSA();
 
     CorruptedTextExceptionWithRSA();
+
+
+    // Hashing
+
+    hash();
 
     return 0;
 }

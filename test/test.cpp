@@ -5,8 +5,8 @@ using namespace lklibs;
 
 TEST(EncryptWithAESTest, EncryptionWithAESMustBeCompletedSuccessfullyWithAValidKey)
 {
-    std::string plainText = "Test message to be used during tests";
-    std::string key = "mySecretKey";
+    auto plainText = "Test message to be used during tests";
+    auto key = "mySecretKey";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
 
@@ -15,8 +15,8 @@ TEST(EncryptWithAESTest, EncryptionWithAESMustBeCompletedSuccessfullyWithAValidK
 
 TEST(DecryptWithAESTest, DecryptionWithAESMustBeCompletedSuccessfullyWithAValidKey)
 {
-    std::string plainText = "Test message to be used during tests";
-    std::string key = "mySecretKey";
+    auto plainText = "Test message to be used during tests";
+    auto key = "mySecretKey";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
     auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
@@ -26,8 +26,8 @@ TEST(DecryptWithAESTest, DecryptionWithAESMustBeCompletedSuccessfullyWithAValidK
 
 TEST(DecryptWithAESTest, DecryptionWithAESMustBeCompletedSuccessfullyForSpecialCharsWithAValidKey)
 {
-    std::string plainText = "Test message to be used during tests with special characters: !@#$%^&*()_+{}|:<>?~`-=[]\\;',./öçşığüÖÇŞİĞÜ";
-    std::string key = "mySecretKey";
+    auto plainText = "Test message to be used during tests with special characters: !@#$%^&*()_+{}|:<>?~`-=[]\\;',./öçşığüÖÇŞİĞÜ";
+    auto key = "mySecretKey";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
     auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
@@ -37,9 +37,9 @@ TEST(DecryptWithAESTest, DecryptionWithAESMustBeCompletedSuccessfullyForSpecialC
 
 TEST(DecryptWithAESTest, DecryptionWithAESMustBeFailedWithAnInvalidKey)
 {
-    std::string plainText = "Test message to be used during tests";
-    std::string key = "mySecretKey";
-    std::string invalidKey = "invalidKey";
+    auto plainText = "Test message to be used during tests";
+    auto key = "mySecretKey";
+    auto invalidKey = "invalidKey";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
 
@@ -62,7 +62,7 @@ TEST(DecryptWithAESTest, DecryptionWithAESMustBeFailedWithAnInvalidKey)
 TEST(DecryptWithAESTest, DecryptionWithAESMustBeFailedWithAnCorruptedEncryptedText)
 {
     auto encryptedText = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    std::string key = "mySecretKey";
+    auto key = "mySecretKey";
 
     try
     {
@@ -82,8 +82,8 @@ TEST(DecryptWithAESTest, DecryptionWithAESMustBeFailedWithAnCorruptedEncryptedTe
 
 TEST(AESKeyTest, AESEncryptionShouldBePossibleWithAKeyLessThan32Characters)
 {
-    std::string plainText = "Test message to be used during tests";
-    std::string key = "123";
+    auto plainText = "Test message to be used during tests";
+    auto key = "123";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
     auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
@@ -93,8 +93,8 @@ TEST(AESKeyTest, AESEncryptionShouldBePossibleWithAKeyLessThan32Characters)
 
 TEST(AESKeyTest, AESEncryptionShouldBePossibleWithAKeyLargerThan32Characters)
 {
-    std::string plainText = "Test message to be used during tests";
-    std::string key = "abcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()_+{}|:<>?~`-=[]\\;',./";
+    auto plainText = "Test message to be used during tests";
+    auto key = "abcdefghijklmnopqrstuvwxyz1234567890!@#$%^&*()_+{}|:<>?~`-=[]\\;',./";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
     auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
@@ -104,8 +104,8 @@ TEST(AESKeyTest, AESEncryptionShouldBePossibleWithAKeyLargerThan32Characters)
 
 TEST(AESKeyTest, AESEncryptionShouldBePossibleWithA32CharactersKey)
 {
-    std::string plainText = "Test message to be used during tests";
-    std::string key = "abcdefghijklmnopqrstuvwxyz123456";
+    auto plainText = "Test message to be used during tests";
+    auto key = "abcdefghijklmnopqrstuvwxyz123456";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
     auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
@@ -115,8 +115,8 @@ TEST(AESKeyTest, AESEncryptionShouldBePossibleWithA32CharactersKey)
 
 TEST(AESKeyTest, AESEncryptionMustBePossibleWithAKeyContainingSpecialCharacters)
 {
-    std::string plainText = "Test message to be used during tests";
-    std::string key = "!@#$%^&*()_+{}|:<>?~`-=[]\\;',./";
+    auto plainText = "Test message to be used during tests";
+    auto key = "!@#$%^&*()_+{}|:<>?~`-=[]\\;',./";
 
     auto encryptedText = CryptoService::encryptWithAES(plainText, key);
     auto decryptedText = CryptoService::decryptWithAES(encryptedText, key);
@@ -329,6 +329,15 @@ TEST(DecryptWithRSATest, DecryptionWithRSAMustBeFailedWithAnCorruptedEncryptedTe
     {
         FAIL() << "Expected CorruptedTextException";
     }
+}
+
+TEST(HashTest, HashWithSHA256MustBeCompletedSuccessfully)
+{
+    auto plainText = "This text will be hashed soon";
+
+    auto hashText = CryptoService::hash(plainText);
+
+    ASSERT_EQ(hashText, "d32448bab2777b376a5592e384146c3c0182ba589e2521bd0275f2cef6a50546") << "Hash is invalid";
 }
 
 int main(int argc, char** argv)

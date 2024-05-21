@@ -15,6 +15,7 @@ Modern, easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and als
 
 * [How to add it to my project](#how-to-add-it-to-my-project)
 * [How to use? (Symmetric Encryption with AES)](#how-to-use-symmetric-encryption-with-aes)
+* [How to use? (Hash with SHA-256)](#how-to-use-hash-with-sha-256)
 * [How to use? (Asymmetric Encryption with RSA)](#how-to-use-asymmetric-encryption-with-rsa)
 * [How do I generate Public/Private Keys?](#how-do-i-generate-publicprivate-keys)
 * [Relationship between key size and max text length that can be encrypted](#relationship-between-key-size-and-max-text-length-that-can-be-encrypted)
@@ -79,6 +80,27 @@ int main() {
 > In fact, the key you need to use with AES-256 must be 32 characters long. However, the library adds a sufficient
 > amount of "0" to the end of keys shorter than 32 characters, and ignores the last parts of keys longer than
 > 32 characters, allowing you to use the key you want without any errors.
+
+## How to use? (Hash with SHA-256)
+
+All you need to do is call the static **"hash"** method to hash the given text with SHA-256.
+
+```cpp
+#include "libcpp-crypto.hpp"
+
+using namespace lklibs;
+
+int main() {
+
+    auto plainText = "This text will be hashed soon";
+    
+    auto hashText = CryptoService::hash(plainText);
+    
+    std::cout << "Hash: " << hashText << std::endl;
+
+    return 0;
+}
+```
 
 ## How to use? (Asymmetric Encryption with RSA)
 
@@ -185,7 +207,7 @@ character sets can take up twice. I am sharing the table below for a quick refer
 | 65536    | 8181                |
 
 > [!IMPORTANT]
-> Do not think that you can easily create a longer key to encrypt a longer text with RSA. Each row in the table above consumes
+> Do not think that you can easily create a longer key to encrypt a longer text with RSA. Each row in the table consumes
 > 4 times more CPU power during encryption/decryption process than the row above. Additionally, generating a 65K bit key takes
 > time and requires a lot of patience, even for a high-end computer.
 
@@ -252,7 +274,7 @@ int main() {
 
 The exception part for the RSA side is a little different. If the public and private keys used are not correct,
 **"InvalidPublicKeyException"** and **"InvalidPrivateKeyException"** are thrown. However, the structure of the keys
-used must be corrupt to throw these exceptions. If you use incompatible but structurally valid keys, no exception 
+used must be corrupt to throw these exceptions. If you use incompatible but structurally valid keys, no exception
 will be thrown. However, the text obtained after decryption will consist of just meaningless characters.
 
 ```cpp
@@ -293,7 +315,6 @@ int main() {
 }
 ```
 
-
 ## Semantic Versioning
 
 Versioning of the library is done using conventional semantic versioning. Accordingly,
@@ -325,6 +346,8 @@ static std::string decryptWithAES(const std::string& ciphertext, const std::stri
 static std::string encryptWithRSA(const std::string& plaintext, const std::string& publicKeyStr);
 
 static std::string decryptWithRSA(const std::string& ciphertext, const std::string& privateKeyStr);
+
+static std::string hash(const std::string& text);
 ```
 
 ## License
