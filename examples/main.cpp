@@ -218,9 +218,9 @@ void hash()
 {
     auto plainText = "This text will be hashed soon";
 
-    auto hash = CryptoService::hash(plainText);
+    auto hashText = CryptoService::hash(plainText);
 
-    std::cout << "Hash: " << hash << std::endl;
+    std::cout << "Hash: " << hashText << std::endl;
 }
 
 int main()
