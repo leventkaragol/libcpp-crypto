@@ -207,7 +207,7 @@ character sets can take up twice. I am sharing the table below for a quick refer
 | 65536    | 8181                |
 
 > [!IMPORTANT]
-> Do not think that you can easily create a longer key to encrypt a longer text with RSA. Each row in the table above consumes
+> Do not think that you can easily create a longer key to encrypt a longer text with RSA. Each row in the table consumes
 > 4 times more CPU power during encryption/decryption process than the row above. Additionally, generating a 65K bit key takes
 > time and requires a lot of patience, even for a high-end computer.
 
