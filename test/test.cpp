@@ -331,6 +331,15 @@ TEST(DecryptWithRSATest, DecryptionWithRSAMustBeFailedWithAnCorruptedEncryptedTe
     }
 }
 
+TEST(HashTest, HashWithSHA256MustBeCompletedSuccessfully)
+{
+    std::string plainText = "This text will be hashed soon";
+
+    auto hashedText = CryptoService::hash(plainText);
+
+    ASSERT_EQ(hashedText, "d32448bab2777b376a5592e384146c3c0182ba589e2521bd0275f2cef6a50546") << "Hash is invalid";
+}
+
 int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
