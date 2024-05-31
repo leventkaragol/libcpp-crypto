@@ -1,7 +1,7 @@
 /*
 
 Easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and also hash (SHA-256) library for C++ (17+)
-version 1.2.0
+version 1.2.1
 https://github.com/leventkaragol/libcpp-crypto
 
 If you encounter any issues, please submit a ticket at https://github.com/leventkaragol/libcpp-crypto/issues
@@ -45,14 +45,88 @@ SOFTWARE.
 #include <stdexcept>
 #include <iostream>
 
-namespace lklibs
-{
+namespace lklibs {
+
     /**
-     * @brief Base64 conversion class for encryption operations
+     * @brief Base Exception class for crypto operations
      */
-    class Base64Converter
-    {
+    struct CryptoException : public std::runtime_error {
     public:
+        explicit CryptoException(const std::string &message) : std::runtime_error(message) {
+        }
+    };
+
+    /**
+     * @brief Exception class for invalid key errors
+     */
+    struct InvalidKeyException : public CryptoException {
+    public:
+        explicit InvalidKeyException(const std::string &message) : CryptoException(message) {
+        }
+    };
+
+    /**
+     * @brief Exception class for invalid public key errors
+     */
+    struct InvalidPublicKeyException : public CryptoException {
+    public:
+        explicit InvalidPublicKeyException(const std::string &message) : CryptoException(message) {
+        }
+    };
+
+    /**
+     * @brief Exception class for invalid private key errors
+     */
+    struct InvalidPrivateKeyException : public CryptoException {
+    public:
+        explicit InvalidPrivateKeyException(const std::string &message) : CryptoException(message) {
+        }
+    };
+
+    /**
+     * @brief Exception class for corrupted text errors
+     */
+    struct CorruptedTextException : public CryptoException {
+    public:
+        explicit CorruptedTextException(const std::string &message) : CryptoException(message) {
+        }
+    };
+
+    /**
+     * @brief Exception class for text too long for public key errors
+     */
+    struct TextTooLongForPublicKeyException : public CryptoException {
+    public:
+        explicit TextTooLongForPublicKeyException(const std::string &message) : CryptoException(message) {
+        }
+    };
+
+    /**
+     * @brief Crypto service class for encryption and decryption operations
+     */
+    namespace CryptoService {
+
+        struct EVP_CIPHER_CTX_Deleter {
+            void operator()(EVP_CIPHER_CTX* ptr) const { EVP_CIPHER_CTX_free(ptr); }
+        };
+
+        struct EVP_MD_CTX_Deleter {
+            void operator()(EVP_MD_CTX* ctx) const {
+                EVP_MD_CTX_free(ctx);
+            }
+        };
+
+        /**
+         * @brief Checks if the given character is a base64 character
+         *
+         * @param c Character to check
+         *
+         * @return True if the character is a base64 character, false otherwise
+         */
+        static bool isBase64(unsigned char c) {
+            return (isalnum(c) || (c == '+') || (c == '/'));
+        }
+
         /**
          * @brief Encodes the given input string to base64
          *
@@ -60,31 +134,27 @@ namespace lklibs
          *
          * @return Encoded base64 string
          */
-        static std::string encode(const std::string& input)
-        {
+        static std::string encode(const std::string &input) {
             static const std::string base64_chars =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz"
-                "0123456789+/";
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                    "abcdefghijklmnopqrstuvwxyz"
+                    "0123456789+/";
 
             std::string ret;
             int i = 0;
             unsigned char char_array_3[3];
             unsigned char char_array_4[4];
 
-            for (auto c : input)
-            {
+            for (auto c: input) {
                 char_array_3[i++] = c;
 
-                if (i == 3)
-                {
+                if (i == 3) {
                     char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
                     char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
                     char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
                     char_array_4[3] = char_array_3[2] & 0x3f;
 
-                    for (i = 0; i < 4; i++)
-                    {
+                    for (i = 0; i < 4; i++) {
                         ret += base64_chars[char_array_4[i]];
                     }
 
@@ -92,10 +162,8 @@ namespace lklibs
                 }
             }
 
-            if (i)
-            {
-                for (int j = i; j < 3; j++)
-                {
+            if (i) {
+                for (int j = i; j < 3; j++) {
                     char_array_3[j] = '\0';
                 }
 
@@ -103,13 +171,11 @@ namespace lklibs
                 char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
                 char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
 
-                for (int j = 0; j < i + 1; j++)
-                {
+                for (int j = 0; j < i + 1; j++) {
                     ret += base64_chars[char_array_4[j]];
                 }
 
-                while (i++ < 3)
-                {
+                while (i++ < 3) {
                     ret += '=';
                 }
             }
@@ -124,29 +190,24 @@ namespace lklibs
          *
          * @return Decoded original string
          */
-        static std::string decode(const std::string& input)
-        {
+        static std::string decode(const std::string &input) {
             static const std::string base64_chars =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz"
-                "0123456789+/";
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                    "abcdefghijklmnopqrstuvwxyz"
+                    "0123456789+/";
 
             std::string ret;
             int i = 0;
             unsigned char char_array_4[4], char_array_3[3];
 
-            for (auto c : input)
-            {
-                if (c == '=' || !isBase64(c))
-                {
+            for (auto c: input) {
+                if (c == '=' || !isBase64(c)) {
                     break;
                 }
 
                 char_array_4[i++] = c;
-                if (i == 4)
-                {
-                    for (i = 0; i < 4; i++)
-                    {
+                if (i == 4) {
+                    for (i = 0; i < 4; i++) {
                         char_array_4[i] = static_cast<unsigned char>(base64_chars.find(char_array_4[i]));
                     }
 
@@ -154,8 +215,7 @@ namespace lklibs
                     char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
                     char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-                    for (i = 0; i < 3; i++)
-                    {
+                    for (i = 0; i < 3; i++) {
                         ret += char_array_3[i];
                     }
 
@@ -163,23 +223,17 @@ namespace lklibs
                 }
             }
 
-            if (i)
-            {
-                for (int j = i; j < 4; j++)
-                {
+            if (i) {
+                for (int j = i; j < 4; j++) {
                     char_array_4[j] = 0;
                 }
 
-                for (unsigned char& j : char_array_4)
-                {
+                for (unsigned char &j: char_array_4) {
                     size_t index = base64_chars.find(j);
 
-                    if (index != std::string::npos)
-                    {
+                    if (index != std::string::npos) {
                         j = static_cast<unsigned char>(index);
-                    }
-                    else
-                    {
+                    } else {
                         j = 0;
                     }
                 }
@@ -188,8 +242,7 @@ namespace lklibs
                 char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
                 char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-                for (int j = 0; j < i - 1; j++)
-                {
+                for (int j = 0; j < i - 1; j++) {
                     ret += char_array_3[j];
                 }
             }
@@ -197,92 +250,86 @@ namespace lklibs
             return ret;
         }
 
-    private:
-        /**
-         * @brief Checks if the given character is a base64 character
-         *
-         * @param c Character to check
-         *
-         * @return True if the character is a base64 character, false otherwise
-         */
-        static bool isBase64(unsigned char c)
-        {
-            return (isalnum(c) || (c == '+') || (c == '/'));
-        }
-    };
+        static int encrypt(const unsigned char* plaintext, int plaintext_len, const unsigned char* key, unsigned char* iv, unsigned char* ciphertext) {
+            std::unique_ptr<EVP_CIPHER_CTX, EVP_CIPHER_CTX_Deleter> ctx(EVP_CIPHER_CTX_new());
 
-    /**
-     * @brief Base Exception class for crypto operations
-     */
-    class CryptoException : public std::runtime_error
-    {
-    public:
-        explicit CryptoException(const std::string& message) : std::runtime_error(message)
-        {
-        }
-    };
+            int len;
+            int ciphertext_len;
 
-    /**
-     * @brief Exception class for invalid key errors
-     */
-    class InvalidKeyException : public CryptoException
-    {
-    public:
-        explicit InvalidKeyException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
+            if (!ctx) {
+                throw CryptoException("Failed to create OpenSSL context for encryption");
+            }
 
-    /**
-     * @brief Exception class for invalid public key errors
-     */
-    class InvalidPublicKeyException : public CryptoException
-    {
-    public:
-        explicit InvalidPublicKeyException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
+            if (1 != EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv)) {
+                throw CryptoException("Failed to initialize OpenSSL encryption operation");
+            }
 
-    /**
-     * @brief Exception class for invalid private key errors
-     */
-    class InvalidPrivateKeyException : public CryptoException
-    {
-    public:
-        explicit InvalidPrivateKeyException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
+            if (1 != EVP_EncryptUpdate(ctx.get(), ciphertext, &len, plaintext, plaintext_len)) {
+                throw CryptoException("Failed to update OpenSSL encryption operation");
+            }
 
-    /**
-     * @brief Exception class for corrupted text errors
-     */
-    class CorruptedTextException : public CryptoException
-    {
-    public:
-        explicit CorruptedTextException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
+            ciphertext_len = len;
 
-    /**
-     * @brief Exception class for text too long for public key errors
-     */
-    class TextTooLongForPublicKeyException : public CryptoException
-    {
-    public:
-        explicit TextTooLongForPublicKeyException(const std::string& message) : CryptoException(message)
-        {
-        }
-    };
+            if (1 != EVP_EncryptFinal_ex(ctx.get(), ciphertext + len, &len)) {
+                throw CryptoException("Failed to finalize OpenSSL encryption operation");
+            }
 
-    /**
-     * @brief Crypto service class for encryption and decryption operations
-     */
-    class CryptoService
-    {
-    public:
+            ciphertext_len += len;
+
+            return ciphertext_len;
+        }
+
+        static int decrypt(const unsigned char* ciphertext, int ciphertext_len, const unsigned char* key, unsigned char* iv, unsigned char* plaintext) {
+            std::unique_ptr<EVP_CIPHER_CTX, EVP_CIPHER_CTX_Deleter> ctx(EVP_CIPHER_CTX_new());
+
+            int len;
+            int plaintext_len;
+
+            if (!ctx) {
+                throw CryptoException("Failed to create OpenSSL context for decryption");
+            }
+
+            if (1 != EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv)) {
+                throw CryptoException("Failed to initialize OpenSSL decryption operation");
+            }
+
+            if (1 != EVP_DecryptUpdate(ctx.get(), plaintext, &len, ciphertext, ciphertext_len)) {
+                throw CryptoException("Failed to update OpenSSL decryption operation");
+            }
+
+            plaintext_len = len;
+
+            if (1 != EVP_DecryptFinal_ex(ctx.get(), plaintext + len, &len)) {
+                if (ERR_GET_REASON(ERR_peek_last_error()) == EVP_R_BAD_DECRYPT) {
+                    throw InvalidKeyException("Encryption key does not match the original encryption key");
+                } else {
+                    throw CorruptedTextException("Encrypted text is corrupted");
+                }
+            }
+
+            plaintext_len += len;
+
+            return plaintext_len;
+        }
+
+        static void generateRandomIV(std::vector<unsigned char> &iv) {
+            if (!RAND_bytes(iv.data(), AES_BLOCK_SIZE)) {
+                throw CryptoException("Failed to generate random IV");
+            }
+        }
+
+        static std::string adjustKeyLength(const std::string &key) {
+            if (key.size() == 32) {
+                return key;
+            } else if (key.size() > 32) {
+                return key.substr(0, 32);
+            } else {
+                std::string adjusted_key = key;
+                adjusted_key.append(32 - key.size(), '0');
+                return adjusted_key;
+            }
+        }
+
         /**
          * @brief Encrypts the given plaintext with the given key using AES-256 encryption
          *
@@ -291,8 +338,7 @@ namespace lklibs
          *
          * @return Encrypted ciphertext
          */
-        static std::string encryptWithAES(const std::string& plaintext, const std::string& key)
-        {
+        std::string encryptWithAES(const std::string &plaintext, const std::string &key) {
             std::string adjustedKey = adjustKeyLength(key);
 
             std::vector<unsigned char> iv(AES_BLOCK_SIZE);
@@ -305,7 +351,7 @@ namespace lklibs
             ciphertext.resize(ciphertext_len);
 
             std::string encrypted = std::string(iv.begin(), iv.end()) + std::string(ciphertext.begin(), ciphertext.end());
-            return Base64Converter::encode(encrypted);
+            return encode(encrypted);
         }
 
         /**
@@ -316,11 +362,10 @@ namespace lklibs
          *
          * @return Decrypted plaintext
          */
-        static std::string decryptWithAES(const std::string& ciphertext, const std::string& key)
-        {
+        std::string decryptWithAES(const std::string &ciphertext, const std::string &key) {
             std::string adjustedKey = adjustKeyLength(key);
 
-            auto encryptedText = Base64Converter::decode(ciphertext);
+            auto encryptedText = decode(ciphertext);
 
             std::vector<unsigned char> iv(AES_BLOCK_SIZE);
             std::copy(encryptedText.begin(), encryptedText.begin() + AES_BLOCK_SIZE, iv.begin());
@@ -342,8 +387,7 @@ namespace lklibs
          *
          * @return Encrypted ciphertext
          */
-        static std::string encryptWithRSA(const std::string& plaintext, const std::string& publicKeyStr)
-        {
+        std::string encryptWithRSA(const std::string &plaintext, const std::string &publicKeyStr) {
             auto bioDeleter = [](BIO* bio) { BIO_free(bio); };
 
             std::unique_ptr<BIO, decltype(bioDeleter)> bio(BIO_new_mem_buf(publicKeyStr.data(), -1), bioDeleter);
@@ -352,8 +396,7 @@ namespace lklibs
 
             std::unique_ptr<EVP_PKEY, decltype(pkeyDeleter)> publicKey(PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr), pkeyDeleter);
 
-            if (!publicKey)
-            {
+            if (!publicKey) {
                 throw InvalidPublicKeyException("RSA public key is invalid");
             }
 
@@ -361,31 +404,27 @@ namespace lklibs
 
             std::unique_ptr<EVP_PKEY_CTX, decltype(ctxDeleter)> ctx(EVP_PKEY_CTX_new(publicKey.get(), nullptr), ctxDeleter);
 
-            if (!ctx)
-            {
+            if (!ctx) {
                 throw CryptoException("Failed to create context for encryption");
             }
 
-            if (EVP_PKEY_encrypt_init(ctx.get()) <= 0)
-            {
+            if (EVP_PKEY_encrypt_init(ctx.get()) <= 0) {
                 throw CryptoException("Failed to initialize encryption operation");
             }
 
             size_t outlen;
 
-            if (EVP_PKEY_encrypt(ctx.get(), nullptr, &outlen, reinterpret_cast<const unsigned char*>(plaintext.data()), plaintext.size()) <= 0)
-            {
+            if (EVP_PKEY_encrypt(ctx.get(), nullptr, &outlen, reinterpret_cast<const unsigned char*>(plaintext.data()), plaintext.size()) <= 0) {
                 throw CryptoException("Failed to get output length for encryption");
             }
 
             std::vector<unsigned char> ciphertext(outlen);
 
-            if (EVP_PKEY_encrypt(ctx.get(), ciphertext.data(), &outlen, reinterpret_cast<const unsigned char*>(plaintext.data()), plaintext.size()) <= 0)
-            {
+            if (EVP_PKEY_encrypt(ctx.get(), ciphertext.data(), &outlen, reinterpret_cast<const unsigned char*>(plaintext.data()), plaintext.size()) <= 0) {
                 throw TextTooLongForPublicKeyException("The text to be encrypted is too long for the public key used");
             }
 
-            return Base64Converter::encode(std::string(ciphertext.begin(), ciphertext.end()));
+            return encode(std::string(ciphertext.begin(), ciphertext.end()));
         }
 
         /**
@@ -396,9 +435,8 @@ namespace lklibs
          *
          * @return Decrypted plaintext
          */
-        static std::string decryptWithRSA(const std::string& ciphertext, const std::string& privateKeyStr)
-        {
-            auto encryptedText = Base64Converter::decode(ciphertext);
+        std::string decryptWithRSA(const std::string &ciphertext, const std::string &privateKeyStr) {
+            auto encryptedText = decode(ciphertext);
 
             auto bioDeleter = [](BIO* bio) { BIO_free(bio); };
 
@@ -408,8 +446,7 @@ namespace lklibs
 
             std::unique_ptr<EVP_PKEY, decltype(pkeyDeleter)> privateKey(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr), pkeyDeleter);
 
-            if (!privateKey)
-            {
+            if (!privateKey) {
                 throw InvalidPrivateKeyException("RSA private key is invalid");
             }
 
@@ -417,31 +454,27 @@ namespace lklibs
 
             std::unique_ptr<EVP_PKEY_CTX, decltype(ctxDeleter)> ctx(EVP_PKEY_CTX_new(privateKey.get(), nullptr), ctxDeleter);
 
-            if (!ctx)
-            {
+            if (!ctx) {
                 throw CryptoException("Failed to create context for decryption");
             }
 
-            if (EVP_PKEY_decrypt_init(ctx.get()) <= 0)
-            {
+            if (EVP_PKEY_decrypt_init(ctx.get()) <= 0) {
                 throw CryptoException("Failed to initialize decryption operation");
             }
 
             size_t outlen;
 
-            if (EVP_PKEY_decrypt(ctx.get(), nullptr, &outlen, reinterpret_cast<const unsigned char*>(encryptedText.data()), encryptedText.size()) <= 0)
-            {
+            if (EVP_PKEY_decrypt(ctx.get(), nullptr, &outlen, reinterpret_cast<const unsigned char*>(encryptedText.data()), encryptedText.size()) <= 0) {
                 throw CryptoException("Failed to get output length for decryption");
             }
 
             std::vector<unsigned char> plaintext(outlen);
 
-            if (EVP_PKEY_decrypt(ctx.get(), plaintext.data(), &outlen, reinterpret_cast<const unsigned char*>(encryptedText.data()), encryptedText.size()) <= 0)
-            {
+            if (EVP_PKEY_decrypt(ctx.get(), plaintext.data(), &outlen, reinterpret_cast<const unsigned char*>(encryptedText.data()), encryptedText.size()) <= 0) {
                 throw CorruptedTextException("Encrypted text is corrupted");
             }
 
-            return std::string(plaintext.begin(), plaintext.begin() + outlen);
+            return std::string{plaintext.begin(), plaintext.begin() + outlen};
         }
 
         /**
@@ -451,25 +484,19 @@ namespace lklibs
          *
          * @return Hashed string
          */
-        static std::string hash(const std::string& text)
-        {
+        std::string hash(const std::string &text) {
             unsigned char hash[EVP_MAX_MD_SIZE];
             unsigned int lengthOfHash = 0;
 
             std::unique_ptr<EVP_MD_CTX, EVP_MD_CTX_Deleter> context(EVP_MD_CTX_new());
 
-            if (context)
-            {
-                if (EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr))
-                {
-                    if (EVP_DigestUpdate(context.get(), text.c_str(), text.size()))
-                    {
-                        if (EVP_DigestFinal_ex(context.get(), hash, &lengthOfHash))
-                        {
+            if (context) {
+                if (EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr)) {
+                    if (EVP_DigestUpdate(context.get(), text.c_str(), text.size())) {
+                        if (EVP_DigestFinal_ex(context.get(), hash, &lengthOfHash)) {
                             std::stringstream ss;
 
-                            for (unsigned int i = 0; i < lengthOfHash; ++i)
-                            {
+                            for (unsigned int i = 0; i < lengthOfHash; ++i) {
                                 ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
                             }
 
@@ -481,122 +508,7 @@ namespace lklibs
 
             return "";
         }
-
-    private:
-        struct EVP_CIPHER_CTX_Deleter
-        {
-            void operator()(EVP_CIPHER_CTX* ptr) const { EVP_CIPHER_CTX_free(ptr); }
-        };
-
-        struct EVP_MD_CTX_Deleter
-        {
-            void operator()(EVP_MD_CTX* ctx) const
-            {
-                EVP_MD_CTX_free(ctx);
-            }
-        };
-
-        static int encrypt(const unsigned char* plaintext, int plaintext_len, const unsigned char* key, unsigned char* iv, unsigned char* ciphertext)
-        {
-            std::unique_ptr<EVP_CIPHER_CTX, EVP_CIPHER_CTX_Deleter> ctx(EVP_CIPHER_CTX_new());
-
-            int len;
-            int ciphertext_len;
-
-            if (!ctx)
-            {
-                throw CryptoException("Failed to create OpenSSL context for encryption");
-            }
-
-            if (1 != EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv))
-            {
-                throw CryptoException("Failed to initialize OpenSSL encryption operation");
-            }
-
-            if (1 != EVP_EncryptUpdate(ctx.get(), ciphertext, &len, plaintext, plaintext_len))
-            {
-                throw CryptoException("Failed to update OpenSSL encryption operation");
-            }
-
-            ciphertext_len = len;
-
-            if (1 != EVP_EncryptFinal_ex(ctx.get(), ciphertext + len, &len))
-            {
-                throw CryptoException("Failed to finalize OpenSSL encryption operation");
-            }
-
-            ciphertext_len += len;
-
-            return ciphertext_len;
-        }
-
-        static int decrypt(const unsigned char* ciphertext, int ciphertext_len, const unsigned char* key, unsigned char* iv, unsigned char* plaintext)
-        {
-            std::unique_ptr<EVP_CIPHER_CTX, EVP_CIPHER_CTX_Deleter> ctx(EVP_CIPHER_CTX_new());
-
-            int len;
-            int plaintext_len;
-
-            if (!ctx)
-            {
-                throw CryptoException("Failed to create OpenSSL context for decryption");
-            }
-
-            if (1 != EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv))
-            {
-                throw CryptoException("Failed to initialize OpenSSL decryption operation");
-            }
-
-            if (1 != EVP_DecryptUpdate(ctx.get(), plaintext, &len, ciphertext, ciphertext_len))
-            {
-                throw CryptoException("Failed to update OpenSSL decryption operation");
-            }
-
-            plaintext_len = len;
-
-            if (1 != EVP_DecryptFinal_ex(ctx.get(), plaintext + len, &len))
-            {
-                if (ERR_GET_REASON(ERR_peek_last_error()) == EVP_R_BAD_DECRYPT)
-                {
-                    throw InvalidKeyException("Encryption key does not match the original encryption key");
-                }
-                else
-                {
-                    throw CorruptedTextException("Encrypted text is corrupted");
-                }
-            }
-
-            plaintext_len += len;
-
-            return plaintext_len;
-        }
-
-        static void generateRandomIV(std::vector<unsigned char>& iv)
-        {
-            if (!RAND_bytes(iv.data(), AES_BLOCK_SIZE))
-            {
-                throw CryptoException("Failed to generate random IV");
-            }
-        }
-
-        static std::string adjustKeyLength(const std::string& key)
-        {
-            if (key.size() == 32)
-            {
-                return key;
-            }
-            else if (key.size() > 32)
-            {
-                return key.substr(0, 32);
-            }
-            else
-            {
-                std::string adjusted_key = key;
-                adjusted_key.append(32 - key.size(), '0');
-                return adjusted_key;
-            }
-        }
-    };
+    }
 }
 
 #endif //LIBCPP_CRYPTO_HPP

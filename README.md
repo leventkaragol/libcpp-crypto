@@ -51,8 +51,8 @@ target_link_libraries(myProject PRIVATE libcpp-crypto OpenSSL::SSL OpenSSL::Cryp
 
 ## How to use? (Symmetric Encryption with AES)
 
-To encrypt and decrypt the given text with AES-256, all you need to do is call the static **"encryptWithAES"** and
-**"decryptWithAES"** methods with a key you choose for encryption.
+To encrypt and decrypt the given text with AES-256, all you need to do is call the **"encryptWithAES"** and
+**"decryptWithAES"** functions with a key you choose for encryption.
 
 ```cpp
 #include "libcpp-crypto.hpp"
@@ -83,7 +83,7 @@ int main() {
 
 ## How to use? (Hash with SHA-256)
 
-All you need to do is call the static **"hash"** method to hash the given text with SHA-256.
+All you need to do is call the **"hash"** function to hash the given text with SHA-256.
 
 ```cpp
 #include "libcpp-crypto.hpp"
@@ -104,8 +104,8 @@ int main() {
 
 ## How to use? (Asymmetric Encryption with RSA)
 
-To encrypt and decrypt the given text with RSA, all you need to do is call the static **"encryptWithRSA"** and
-**"decryptWithRSA"** methods with a pair of public/private key.
+To encrypt and decrypt the given text with RSA, all you need to do is call the **"encryptWithRSA"** and
+**"decryptWithRSA"** functions with a pair of public/private key.
 
 > [!TIP]
 > If you don't know how to generate public/private keys, please see the next topic
@@ -332,22 +332,21 @@ section to the documentation.
 
 ## Full function list
 
-You can find the complete list of functions in the library below. All methods in this library are static methods.
-You don't need to create an instance of the class to use them.
+You can find the complete list of functions in the library below.
 
 > [!TIP]
-> All methods and parameters descriptions are also available within the code as comment for IDEs.
+> All functions and parameters descriptions are also available within the code as comment for IDEs.
 
 ```cpp
-static std::string encryptWithAES(const std::string& plaintext, const std::string& key);
+std::string encryptWithAES(const std::string& plaintext, const std::string& key);
 
-static std::string decryptWithAES(const std::string& ciphertext, const std::string& key);
+std::string decryptWithAES(const std::string& ciphertext, const std::string& key);
 
-static std::string encryptWithRSA(const std::string& plaintext, const std::string& publicKeyStr);
+std::string encryptWithRSA(const std::string& plaintext, const std::string& publicKeyStr);
 
-static std::string decryptWithRSA(const std::string& ciphertext, const std::string& privateKeyStr);
+std::string decryptWithRSA(const std::string& ciphertext, const std::string& privateKeyStr);
 
-static std::string hash(const std::string& text);
+std::string hash(const std::string& text);
 ```
 
 ## License
