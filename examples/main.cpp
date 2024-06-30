@@ -52,6 +52,22 @@ void CorruptedTextExceptionWithAES()
     }
 }
 
+void generatePublicPrivateKeyPairForRSA()
+{
+    auto keyPair = CryptoService::generateRSAKeyPair(2048);
+
+    std::cout << "2048 bit Public RSA Key:" << std::endl << keyPair.publicKey << std::endl;
+    std::cout << "2048 bit Private RSA Key:" << std::endl << keyPair.privateKey << std::endl;
+}
+
+void generatePublicPrivateKeyPairForRSAWithPassphrase()
+{
+    auto keyPair = CryptoService::generateRSAKeyPair(2048, "myPassphrase");
+
+    std::cout << "2048 bit Public RSA Key (with passphrase):" << std::endl << keyPair.publicKey << std::endl;
+    std::cout << "2048 bit Private RSA Key (with passphrase):" << std::endl << keyPair.privateKey << std::endl;
+}
+
 void encryptWithRSA()
 {
     auto plainText = "This text will be encrypted soon";
@@ -107,6 +123,19 @@ void decryptWithRSA()
     auto plainText = CryptoService::decryptWithRSA(encryptedText, privateKey);
 
     std::cout << "Decrypted Text: " << plainText << std::endl;
+}
+
+void decryptWithRSAWithPassphrase()
+{
+    auto keyPair = CryptoService::generateRSAKeyPair(2048, "myPassphrase");
+
+    auto plainText = "This text will be encrypted soon (with passphrase)";
+
+    auto encryptedText = CryptoService::encryptWithRSA(plainText, keyPair.publicKey);
+
+    auto decryptedText = CryptoService::decryptWithRSA(encryptedText, keyPair.privateKey, "myPassphrase");
+
+    std::cout << "Decrypted Text: " << decryptedText << std::endl;
 }
 
 void invalidPublicKeyExceptionWithRSA()
@@ -238,9 +267,15 @@ int main()
 
     // Asymmetric Encryption with RSA
 
+    generatePublicPrivateKeyPairForRSA();
+
+    generatePublicPrivateKeyPairForRSAWithPassphrase();
+
     encryptWithRSA();
 
     decryptWithRSA();
+
+    decryptWithRSAWithPassphrase();
 
     invalidPublicKeyExceptionWithRSA();
 

@@ -172,12 +172,34 @@ int main() {
 
 ## How do I generate Public/Private Keys?
 
-it is very easy to generate the Public and Private key pair, if OpenSSL is installed on your system. As a first step,
-when you run it by typing the following line on the command line, a text file named "private_key.pem" will be created
-containing the private key information. "2048" at the end of the command indicates bits value of the generated key.
+You have two different options to create a Public and Private key pair. The first option, and the easier one, is to use the
+generateRSAKeyPair function in the library, passing the desired key length as a parameter. Below is a sample code for this usage.
+
+```cpp
+    auto keyPair = CryptoService::generateRSAKeyPair(2048);
+
+    std::cout << "2048 bit Public RSA Key:" << std::endl << keyPair.publicKey << std::endl;
+    std::cout << "2048 bit Private RSA Key:" << std::endl << keyPair.privateKey << std::endl;
+```
 
 > [!TIP]
-> If you don't know what value to write here, please see the next topic
+> If you are not sure of the key length you will need, please see the next topic
+
+
+Optionally, you can also pass a passphrase as follows to the generateRSAKeyPair function during key creation. In this case,
+you will need to pass this passphrase to the decryptWithRSA function to decrypt the text.
+
+```cpp
+    auto keyPair = CryptoService::generateRSAKeyPair(2048, "myPassphrase");
+
+    std::cout << "2048 bit Public RSA Key (with passphrase):" << std::endl << keyPair.publicKey << std::endl;
+    std::cout << "2048 bit Private RSA Key (with passphrase):" << std::endl << keyPair.privateKey << std::endl;
+```
+
+As a second option, if OpenSSL is installed on your system, you can use the necessary OpenSSL commands from the 
+command line to create a Public and Private key pair. As the first step in this option, when you run it by typing 
+the following line on the command line, a text file named "private_key.pem" will be created containing the private
+key information.
 
 ```bash
 openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
@@ -210,6 +232,10 @@ character sets can take up twice. I am sharing the table below for a quick refer
 > Do not think that you can easily create a longer key to encrypt a longer text with RSA. Each row in the table consumes
 > 4 times more CPU power during encryption/decryption process than the row above. Additionally, generating a 65K bit key takes
 > time and requires a lot of patience, even for a high-end computer.
+
+> [!CAUTION]
+> 1024-bit RSA keys are not secure in the face of today's increasing computing power and advanced factorization algorithms. 
+> Please use keys of at least 2048 bits.
 
 ## How to handle Exceptions (AES)?
 
@@ -341,6 +367,8 @@ You can find the complete list of functions in the library below.
 std::string encryptWithAES(const std::string& plaintext, const std::string& key);
 
 std::string decryptWithAES(const std::string& ciphertext, const std::string& key);
+
+RSAKeyPair generateRSAKeyPair(int keyLength, const std::string& passphrase = "");
 
 std::string encryptWithRSA(const std::string& plaintext, const std::string& publicKeyStr);
 

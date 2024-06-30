@@ -124,6 +124,46 @@ TEST(AESKeyTest, AESEncryptionMustBePossibleWithAKeyContainingSpecialCharacters)
     ASSERT_EQ(decryptedText, plainText) << "decryptedText is invalid";
 }
 
+TEST(RSAKeyTest, PublicPrivateKeyPairForRSAMustBeSuccessfullyGeneratedWithoutPassphrase)
+{
+    auto keyPair = CryptoService::generateRSAKeyPair(2048);
+
+    ASSERT_FALSE(keyPair.publicKey.empty()) << "publicKey is empty";
+    ASSERT_FALSE(keyPair.privateKey.empty()) << "privateKey is empty";
+}
+
+TEST(RSAKeyTest, PublicPrivateKeyPairForRSAMustBeSuccessfullyGeneratedWithPassphrase)
+{
+    auto keyPair = CryptoService::generateRSAKeyPair(2048, "myPassphrase");
+
+    ASSERT_FALSE(keyPair.publicKey.empty()) << "publicKey is empty";
+    ASSERT_FALSE(keyPair.privateKey.empty()) << "privateKey is empty";
+}
+
+TEST(RSAKeyTest, GeneratedRSAKeyPairShouldBeUsedSuccessfullyWithoutPassphrase)
+{
+    auto keyPair = CryptoService::generateRSAKeyPair(2048);
+
+    auto plainText = "This text will be encrypted soon";
+
+    auto encryptedText = CryptoService::encryptWithRSA(plainText, keyPair.publicKey);
+    auto decryptedText = CryptoService::decryptWithRSA(encryptedText, keyPair.privateKey);
+
+    ASSERT_EQ(decryptedText, plainText) << "decryptedText is invalid";
+}
+
+TEST(RSAKeyTest, GeneratedRSAKeyPairShouldBeUsedSuccessfullyWitPassphrase)
+{
+    auto keyPair = CryptoService::generateRSAKeyPair(2048, "myPassphrase");
+
+    auto plainText = "This text will be encrypted soon";
+
+    auto encryptedText = CryptoService::encryptWithRSA(plainText, keyPair.publicKey);
+    auto decryptedText = CryptoService::decryptWithRSA(encryptedText, keyPair.privateKey, "myPassphrase");
+
+    ASSERT_EQ(decryptedText, plainText) << "decryptedText is invalid";
+}
+
 TEST(EncryptWithRSATest, EncryptionWithRSAMustBeCompletedSuccessfullyWithAValidPublicKey)
 {
     auto plainText = "This text will be encrypted soon";
@@ -197,7 +237,7 @@ TEST(EncryptWithRSATest, EncryptionWithRSAMustBeFailedWithTooLongText)
     }
 }
 
-TEST(DecryptWithRSATest, DecryptionWithRSAMustBeCompletedSuccessfullyWithAValidPrivateKey)
+TEST(DecryptWithRSATest, DecryptionWithRSAMustBeCompletedSuccessfullyWithAValidPrivateKeyWithoutPassphrase)
 {
     auto plainText = "This text will be encrypted soon";
 
@@ -246,6 +286,57 @@ TEST(DecryptWithRSATest, DecryptionWithRSAMustBeCompletedSuccessfullyWithAValidP
     ASSERT_EQ(decryptedText, plainText) << "decryptedText is invalid";
 }
 
+TEST(DecryptWithRSATest, DecryptionWithRSAMustBeCompletedSuccessfullyWithAValidPrivateKeyWithPassphrase)
+{
+    auto plainText = "This text will be encrypted soon";
+
+    auto publicKey = "-----BEGIN PUBLIC KEY-----\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq6s5i6Nn1OrfbKzY6wnM\n"
+        "8VgpZfiFkSXE/ncuLs6wxWAb/OmY8jtqzJSwCZxoKjzLQrt7kVYjTTAu4oAM/GdP\n"
+        "ufE4wvfrs9gqOYXcU31SgKNaffdLETHuTMsgBqhsmHHd872XgOSNUgP9ma5fvYKA\n"
+        "+fVhGdSkKfGai3NVS0UaZTJSc8HAWcqMMqtO17YnN8MD/nkNC4hEyBkBdJ/imfg9\n"
+        "1LbVEMn8uEM02kKLz7dMmcdFdAwc1WqCNv1Jl5MZrzapZU6n/wbn1tRUP+2Ug/PW\n"
+        "wss6bOfIXPX2ZPGT+Z90G45xbPHOpTvzH8d/P8eQxZdyx3ZnZJ9xnghrwJLS1pBI\n"
+        "6wIDAQAB\n"
+        "-----END PUBLIC KEY-----";
+
+    auto privateKey = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n"
+        "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\n"
+        "-----END ENCRYPTED PRIVATE KEY-----";
+
+    auto encryptedText = CryptoService::encryptWithRSA(plainText, publicKey);
+    auto decryptedText = CryptoService::decryptWithRSA(encryptedText, privateKey, "myPassphrase");
+
+    ASSERT_EQ(decryptedText, plainText) << "decryptedText is invalid";
+}
+
 TEST(DecryptWithRSATest, DecryptionWithRSAMustBeFailedWithAnInvalidPrivateKey)
 {
     auto plainText = "This text will be encrypted soon";
@@ -274,7 +365,70 @@ TEST(DecryptWithRSATest, DecryptionWithRSAMustBeFailedWithAnInvalidPrivateKey)
     }
     catch (const InvalidPrivateKeyException& e)
     {
-        EXPECT_EQ(std::string(e.what()), "RSA private key is invalid");
+        EXPECT_EQ(std::string(e.what()), "RSA private key is invalid or passphrase is incorrect");
+    }
+    catch (...)
+    {
+        FAIL() << "Expected InvalidPrivateKeyException";
+    }
+}
+
+TEST(DecryptWithRSATest, DecryptionWithRSAMustBeFailedWithAnInvalidPassphrase)
+{
+    auto plainText = "This text will be encrypted soon";
+
+    auto publicKey = "-----BEGIN PUBLIC KEY-----\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAq6s5i6Nn1OrfbKzY6wnM\n"
+        "8VgpZfiFkSXE/ncuLs6wxWAb/OmY8jtqzJSwCZxoKjzLQrt7kVYjTTAu4oAM/GdP\n"
+        "ufE4wvfrs9gqOYXcU31SgKNaffdLETHuTMsgBqhsmHHd872XgOSNUgP9ma5fvYKA\n"
+        "+fVhGdSkKfGai3NVS0UaZTJSc8HAWcqMMqtO17YnN8MD/nkNC4hEyBkBdJ/imfg9\n"
+        "1LbVEMn8uEM02kKLz7dMmcdFdAwc1WqCNv1Jl5MZrzapZU6n/wbn1tRUP+2Ug/PW\n"
+        "wss6bOfIXPX2ZPGT+Z90G45xbPHOpTvzH8d/P8eQxZdyx3ZnZJ9xnghrwJLS1pBI\n"
+        "6wIDAQAB\n"
+        "-----END PUBLIC KEY-----";
+
+    auto privateKey = "-----BEGIN ENCRYPTED PRIVATE KEY-----\n"
+        "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\n"
+        "-----END ENCRYPTED PRIVATE KEY-----";
+
+    auto encryptedText = CryptoService::encryptWithRSA(plainText, publicKey);
+
+    try
+    {
+        auto decryptedText = CryptoService::decryptWithRSA(encryptedText, privateKey, "invalidPassphrase");
+
+        FAIL() << "Expected InvalidPrivateKeyException";
+    }
+    catch (const InvalidPrivateKeyException& e)
+    {
+        EXPECT_EQ(std::string(e.what()), "RSA private key is invalid or passphrase is incorrect");
     }
     catch (...)
     {
