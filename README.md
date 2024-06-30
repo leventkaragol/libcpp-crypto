@@ -43,9 +43,9 @@ project(myProject)
 
 find_package(OpenSSL REQUIRED)
 
-add_executable(myProject main.cpp)
+add_executable(myProject main.cpp libcpp-crypto.hpp)
 
-target_link_libraries(myProject PRIVATE libcpp-crypto OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(myProject PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
 ```
 
@@ -176,10 +176,10 @@ You have two different options to create a Public and Private key pair. The firs
 generateRSAKeyPair function in the library, passing the desired key length as a parameter. Below is a sample code for this usage.
 
 ```cpp
-    auto keyPair = CryptoService::generateRSAKeyPair(2048);
+auto keyPair = CryptoService::generateRSAKeyPair(2048);
 
-    std::cout << "2048 bit Public RSA Key:" << std::endl << keyPair.publicKey << std::endl;
-    std::cout << "2048 bit Private RSA Key:" << std::endl << keyPair.privateKey << std::endl;
+std::cout << "2048 bit Public RSA Key:" << std::endl << keyPair.publicKey << std::endl;
+std::cout << "2048 bit Private RSA Key:" << std::endl << keyPair.privateKey << std::endl;
 ```
 
 > [!TIP]
@@ -190,14 +190,14 @@ Optionally, you can also pass a passphrase as follows to the generateRSAKeyPair 
 you will need to pass this passphrase to the decryptWithRSA function to decrypt the text.
 
 ```cpp
-    auto keyPair = CryptoService::generateRSAKeyPair(2048, "myPassphrase");
+auto keyPair = CryptoService::generateRSAKeyPair(2048, "myPassphrase");
 
-    std::cout << "2048 bit Public RSA Key (with passphrase):" << std::endl << keyPair.publicKey << std::endl;
-    std::cout << "2048 bit Private RSA Key (with passphrase):" << std::endl << keyPair.privateKey << std::endl;
+std::cout << "2048 bit Public RSA Key:" << std::endl << keyPair.publicKey << std::endl;
+std::cout << "2048 bit Private RSA Key:" << std::endl << keyPair.privateKey << std::endl;
 ```
 
-As a second option, if OpenSSL is installed on your system, you can use the necessary OpenSSL commands from the 
-command line to create a Public and Private key pair. As the first step in this option, when you run it by typing 
+As a second option, if OpenSSL is installed on your system, you can use the necessary OpenSSL commands from the
+command line to create a Public and Private key pair. As the first step in this option, when you run it by typing
 the following line on the command line, a text file named "private_key.pem" will be created containing the private
 key information.
 
@@ -234,7 +234,7 @@ character sets can take up twice. I am sharing the table below for a quick refer
 > time and requires a lot of patience, even for a high-end computer.
 
 > [!CAUTION]
-> 1024-bit RSA keys are not secure in the face of today's increasing computing power and advanced factorization algorithms. 
+> 1024-bit RSA keys are not secure in the face of today's increasing computing power and advanced factorization algorithms.
 > Please use keys of at least 2048 bits.
 
 ## How to handle Exceptions (AES)?
