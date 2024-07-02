@@ -1,7 +1,7 @@
 /*
 
 Easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and also hash (SHA-256) library for C++ (17+)
-version 1.3.0
+version 1.3.1
 https://github.com/leventkaragol/libcpp-crypto
 
 If you encounter any issues, please submit a ticket at https://github.com/leventkaragol/libcpp-crypto/issues
@@ -614,6 +614,11 @@ namespace lklibs
                 throw CryptoException("Failed to initialize encryption operation");
             }
 
+            if (EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_OAEP_PADDING) <= 0)
+            {
+                throw CryptoException("Failed to set RSA padding");
+            }
+
             size_t outlen;
 
             if (EVP_PKEY_encrypt(ctx.get(), nullptr, &outlen, reinterpret_cast<const unsigned char*>(plaintext.data()), plaintext.size()) <= 0)
@@ -669,6 +674,11 @@ namespace lklibs
             if (EVP_PKEY_decrypt_init(ctx.get()) <= 0)
             {
                 throw CryptoException("Failed to initialize decryption operation");
+            }
+
+            if (EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_OAEP_PADDING) <= 0)
+            {
+                throw CryptoException("Failed to set RSA padding");
             }
 
             size_t outlen;
