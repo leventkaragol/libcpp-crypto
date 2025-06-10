@@ -16,6 +16,7 @@ Easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and also hash (
 * [How to add it to my project](#how-to-add-it-to-my-project)
 * [How to use? (Symmetric Encryption with AES)](#how-to-use-symmetric-encryption-with-aes)
 * [How to use? (Hash with SHA-256)](#how-to-use-hash-with-sha-256)
+* [How to use? (Hash with HMAC SHA-256)](#how-to-use-hash-with-hmac-sha-256)
 * [How to use? (Asymmetric Encryption with RSA)](#how-to-use-asymmetric-encryption-with-rsa)
 * [How do I generate Public/Private Keys?](#how-do-i-generate-publicprivate-keys)
 * [Relationship between key size and max text length that can be encrypted](#relationship-between-key-size-and-max-text-length-that-can-be-encrypted)
@@ -97,6 +98,29 @@ int main() {
     auto hashText = CryptoService::hash(plainText);
     
     std::cout << "Hash: " << hashText << std::endl;
+
+    return 0;
+}
+```
+
+## How to use? (Hash with HMAC SHA-256)
+
+All you need to do is call the **"hashByHmacSha256"** function to hash the given text by given secret key with HMAC SHA-256.
+
+```cpp
+#include "libcpp-crypto.hpp"
+
+using namespace lklibs;
+
+int main() {
+
+    auto plainText = "This text will be hashed soon";
+    
+    const auto key = "mySecretKey";
+
+    const auto hashedText = CryptoService::hashByHmacSha256(plainText, key);
+    
+    std::cout << "Hash: " << hashedText << std::endl;
 
     return 0;
 }
