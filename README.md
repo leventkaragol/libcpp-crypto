@@ -105,7 +105,7 @@ int main() {
 
 ## How to use? (Hash with HMAC SHA-256)
 
-All you need to do is call the **"hashByHmacSha256"** function to hash the given text by given secret key with HMAC SHA-256.
+All you need to do is call the **"hmacSha256"** function to hash the given text by given secret key with HMAC SHA-256.
 
 ```cpp
 #include "libcpp-crypto.hpp"
@@ -118,7 +118,7 @@ int main() {
     
     const auto key = "mySecretKey";
 
-    const auto hashedText = CryptoService::hashByHmacSha256(plainText, key);
+    const auto hashedText = CryptoService::hmacSha256(plainText, key);
     
     std::cout << "Hash: " << hashedText << std::endl;
 
