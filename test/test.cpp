@@ -499,7 +499,7 @@ TEST(HmacSha256Test, HashWithHMACSHA256MustBeCompletedSuccessfully)
     const auto plainText = "This text will be hashed soon";
     const auto key = "mySecretKey";
 
-    const auto hashText = CryptoService::hmacSha256(plainText, key);
+    const auto hashText = CryptoService::hashWithHMACSHA256(plainText, key);
 
     ASSERT_EQ(hashText, "875dae56af4cb9c9c1b2e7f30e28704da4f1933bf85bb180409761f9c4721186") << "Hash is invalid";
 }

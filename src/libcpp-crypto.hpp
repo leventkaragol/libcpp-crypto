@@ -745,7 +745,7 @@ namespace lklibs
          *
          * @return Hashed string
          */
-        inline std::string hmacSha256(const std::string& plainText, const std::string& key)
+        inline std::string hashWithHMACSHA256(const std::string& plainText, const std::string& key)
         {
             const auto keyBytes = reinterpret_cast<const unsigned char*>(key.c_str());
             const size_t keyLength = key.length();

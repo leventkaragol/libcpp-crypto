@@ -252,12 +252,12 @@ void hash()
     std::cout << "Hash: " << hashText << std::endl;
 }
 
-void hashByHmacSha256()
+void hashWithHMACSHA256()
 {
     const auto plainText = "This text will be hashed soon";
     const auto key = "mySecretKey";
 
-    const auto hashText = CryptoService::hmacSha256(plainText, key);
+    const auto hashText = CryptoService::hashWithHMACSHA256(plainText, key);
 
     std::cout << "Hash: " << hashText << std::endl;
 }
@@ -300,7 +300,7 @@ int main()
 
     hash();
 
-    hashByHmacSha256();
+    hashWithHMACSHA256();
 
     return 0;
 }
