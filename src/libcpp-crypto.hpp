@@ -1,7 +1,7 @@
 /*
 
 Easy-to-use, symmetric (AES-256) and asymmetric (RSA) encryption and also hash (SHA-256) library for C++ (17+)
-version 1.3.1
+version 1.4.0
 https://github.com/leventkaragol/libcpp-crypto
 
 If you encounter any issues, please submit a ticket at https://github.com/leventkaragol/libcpp-crypto/issues

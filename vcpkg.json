@@ -1,15 +1,15 @@
 {
   "name": "libcpp-crypto",
-  "version-string": "1.0.0",
+  "version-string": "1.4.0",
   "builtin-baseline": "7eb700c9688daed6d8bdcdc571ebe3eedea6a774",
   "dependencies": [
     {
       "name": "gtest",
-      "version>=": "1.14.0#1"
+      "version>=": "1.17.0#1"
     },
     {
       "name": "openssl",
-      "version>=": "3.3.0#1"
+      "version>=": "3.5.0#1"
     }
   ]
 }
