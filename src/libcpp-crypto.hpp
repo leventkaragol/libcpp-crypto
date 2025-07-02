@@ -36,6 +36,7 @@ SOFTWARE.
 #include <openssl/aes.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
+#include <openssl/hmac.h>
 #include <string>
 #include <cstring>
 #include <iomanip>
@@ -734,6 +735,43 @@ namespace lklibs
             }
 
             return "";
+        }
+
+        /**
+         * @brief Hashes the given string with HMAC SHA-256
+         *
+         * @param plainText String to hash
+         * @param key key to use for hashing plainText
+         *
+         * @return Hashed string
+         */
+        inline std::string hashWithHMACSHA256(const std::string& plainText, const std::string& key)
+        {
+            const auto keyBytes = reinterpret_cast<const unsigned char*>(key.c_str());
+            const size_t keyLength = key.length();
+
+            const auto data = reinterpret_cast<const unsigned char*>(plainText.c_str());
+            const size_t dataLength = plainText.length();
+
+            unsigned char result[SHA256_DIGEST_LENGTH];
+            unsigned int resultLength;
+
+            if (HMAC(EVP_sha256(), keyBytes, static_cast<int>(keyLength), data, static_cast<int>(dataLength), result, &resultLength) == nullptr)
+            {
+                std::cerr << "Error: HMAC calculation failed." << std::endl;
+
+                return "";
+            }
+
+            const std::vector hashBytes(result, result + resultLength);
+
+            std::stringstream ss;
+            for (const unsigned char byte : hashBytes)
+            {
+                ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
+            }
+
+            return ss.str();
         }
     }
 }

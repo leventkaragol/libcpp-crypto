@@ -252,6 +252,16 @@ void hash()
     std::cout << "Hash: " << hashText << std::endl;
 }
 
+void hashWithHMACSHA256()
+{
+    const auto plainText = "This text will be hashed soon";
+    const auto key = "mySecretKey";
+
+    const auto hashText = CryptoService::hashWithHMACSHA256(plainText, key);
+
+    std::cout << "Hash: " << hashText << std::endl;
+}
+
 int main()
 {
     // Symmetric Encryption with AES
@@ -289,6 +299,8 @@ int main()
     // Hashing
 
     hash();
+
+    hashWithHMACSHA256();
 
     return 0;
 }
